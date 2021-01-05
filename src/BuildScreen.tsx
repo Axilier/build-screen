@@ -5,7 +5,7 @@ import TileLogo from './assets/TileLogo';
 import TitleBar from "./components/TitleBar/TitleBar";
 import {TitleBarTileType} from "./components/TitleBar/TitleBarTile";
 import BuildStage from "./components/BuildStage/BuildStage";
-import {Mouse, Selector} from './assets/Tools'
+import {Mouse, Selector} from './components/Icons'
 import {Item, Room, SubTool, Tool} from './Types'
 import {AppInfoContext} from "./Context";
 import ContextMenu from "./components/ContextMenu/ContextMenu";

@@ -5,7 +5,8 @@ import '../../css/PropertiesSidebar.css'
 import TextBox from "../TextBox";
 import Button from "../Button";
 import {AppInfoContext} from "../../Context";
-import {SubTool} from "../../Types";
+import {SubTool, Tile} from "../../Types";
+import TileList from "../TileList/TileList";
 
 interface ShapeInfo {
     width: number | string
@@ -57,21 +58,30 @@ export default function PropertiesSidebar() {
         }
     }, [selectedSubTool])
 
+    const testComponents : Array<Tile> = [
+        {
+            name: "test",
+            locked: false,
+            shown: true
+        }
+    ]
+
     const upperMenu = [
         {
             name: "Transform",
             component:
-                <div className={"transform-component"}>
-                    <div>
-                        <TextBox label={"X"} units={"Sqr"} disabled={menusDisabled} value={shapeInfo.x}/>
-                        <TextBox label={"Y"} units={"Sqr"} disabled={menusDisabled} value={shapeInfo.y}/>
+                <>
+                    <div className={"transform-component"}>
+                        <div>
+                            <TextBox label={"X"} units={"Sqr"} disabled={menusDisabled} value={shapeInfo.x}/>
+                            <TextBox label={"Y"} units={"Sqr"} disabled={menusDisabled} value={shapeInfo.y}/>
+                        </div>
+                        <div>
+                            <TextBox label={"Width"} units={"Sqr"} disabled={menusDisabled} value={shapeInfo.width}/>
+                            <TextBox label={"Height"} units={"Sqr"} disabled={menusDisabled} value={shapeInfo.height}/>
+                        </div>
                     </div>
-                    <div>
-                        <TextBox label={"Width"} units={"Sqr"} disabled={menusDisabled} value={shapeInfo.width}/>
-                        <TextBox label={"Height"} units={"Sqr"} disabled={menusDisabled} value={shapeInfo.height}/>
-                    </div>
-
-                </div>
+                </>
         },
         {
             name: "Colour",
@@ -80,8 +90,9 @@ export default function PropertiesSidebar() {
         {
             name: "Components",
             component:
-                <div>
-                    <Button onClick={() => null} disabled={menusDisabled}>Add Component</Button>
+                <div style={{width: '100%', height: '500px'}}>
+                    <TileList tiles={testComponents}/>
+                    {/*<Button onClick={() => null} disabled={menusDisabled}>Add Component</Button>*/}
                 </div>
         }
     ]

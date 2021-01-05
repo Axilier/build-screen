@@ -32,10 +32,11 @@ export enum Tool {
     Text,
     delete
 }
- export enum SubTool {
+
+export enum SubTool {
     null,
     AddDoor
- }
+}
 
 enum ShapeType {
     Room
@@ -58,11 +59,18 @@ export interface ShapeInfo {
     y: number
 }
 
- export interface Room {
-     name: string
-     x: number, // Top left of the room
-     y: number, // Top left of the room
-     height: number,
-     width: number,
-     doorPosition?: Vector2 | null
- }
+export interface Room {
+    name: string
+    x: number, // Top left of the room
+    y: number, // Top left of the room
+    height: number,
+    width: number,
+    doorPosition?: Vector2 | null
+}
+
+export interface Tile {
+    name: string,
+    components?: null | Array<string> //TODO change string to component object
+    shown: boolean,
+    locked: boolean
+}

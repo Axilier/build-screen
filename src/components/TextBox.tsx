@@ -1,6 +1,6 @@
 import * as React from 'react';
 import '../css/Components.css'
-import Lock from "./Lock";
+import Lock from "./Icons/Lock";
 import {useEffect, useState} from "react";
 
 interface Props {

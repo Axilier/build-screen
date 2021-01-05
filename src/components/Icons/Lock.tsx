@@ -1,13 +1,14 @@
 import * as React from 'react';
-import {useEffect, useState} from 'react';
-import '../css/Components.css'
+import {CSSProperties, useEffect, useState} from 'react';
+import '../../css/Components.css'
 
 interface Props {
     locked: boolean
     disabled?: boolean
+    style?: CSSProperties
 }
 
-export default function Lock({locked, disabled}: Props) {
+export default function Lock({locked, disabled, style}: Props) {
     const [isLocked, setIsLocked] = useState(locked)
 
     useEffect(() => setIsLocked(locked), [locked])
@@ -15,6 +16,7 @@ export default function Lock({locked, disabled}: Props) {
     return (
         <>
             <svg
+                style={style}
                 viewBox="0 0 16 16"
                 xmlns="http://www.w3.org/2000/svg"
                 fillRule="evenodd"
