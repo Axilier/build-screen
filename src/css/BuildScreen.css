@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600&display=swap');
+
+html, body, #root, .main-body {
+    height: 100%;
+    width: 100%;
+}
+
+.build-screen {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+.main-body {
+    display: flex;
+    flex-direction: row;
+}
+
+.toolbar {
+    position: relative;
+    display: flex;
+    height: 70px;
+    width: 100%;
+    background-color: white;
+    align-items: center;
+    box-shadow: 0 3px 6px #00000029;
+    z-index: 10;
+}
+
+.toolbar-line {
+    position: absolute;
+    bottom: 0;
+    height: 2px;
+    width: 100%;
+    background-color: #3761FF;
+    left: 0;
+}
+
+.logo-container {
+    width: 80px;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+}
+.filename {
+    font-family: 'IBM Plex Sans', 'Source Sans Pro', sans-serif;
+    text-transform: capitalize;
+    color: black;
+    font-size: 18px;
+}
+.logo {
+    height: 35px;
+}
+.side-toolbar {
+    padding: 25px 0;
+    flex: 0 0 auto;
+    width: 80px;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+}
+.side-toolbar-icon-container {
+    display: flex;
+    align-content: center;
+    padding: 25px 0;
+}
+.side-toolbar-icon-container:hover {
+    cursor: pointer;
+}
+.sidebar-icon {
+    margin: auto;
+    height: 22px;
+}
+.insert-toolbar {
+    flex: 0 0 auto;
+    background-color: #F5F5F5;
+    width: 250px;
+}
+.build-stage{
+    display: flex;
+    flex-direction: column;
+}
+.konva-canvas {
+    flex: 1 0 auto;
+    background-color: #e4e4e4;
+}
+.bottom-infobar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    height: 30px;
+    background-color: #FAFAFA;
+}

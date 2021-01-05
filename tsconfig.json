@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "declarationDir": "./dist",
+    "module": "esnext",
+    "lib": ["dom", "esnext"],
+    "target": "ES6",
+    "allowJs": false,
+    "strict": true,
+    "jsx": "react",
+    "outDir": "./dist",
+    "moduleResolution": "Node"
+  },
+  "include": ["./src/**/*"],
+  "exclude": ["node_modules", "dist", "example"]
+}

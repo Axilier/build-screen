@@ -1,0 +1,21 @@
+.drop-menu {
+    padding: 5px 0;
+    border-radius: 4px;
+    margin-top: 5px;
+    left: 0;
+    position: absolute;
+    font-family: 'IBM Plex Sans', 'Source Sans Pro', sans-serif;
+    z-index: 100;
+}
+
+.dropdown-tile {
+    font-size: 15px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 5px 15px;
+}
+
+.dropdown-tile:hover {
+    cursor: pointer;
+}
