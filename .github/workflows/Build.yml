@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: dev
+          ref: master
       - name: setup node
         uses: actions/setup-node@v2-beta
         with:
@@ -28,11 +28,13 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+          branch: BUILD
           force: true
-      - name: Repository Dispatch
-        uses: peter-evans/repository-dispatch@v1
+          directory: .
+      - name: Deploy
+        uses: s0/git-publish-subdir-action@develop
         with:
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          repository: KLewin23/Mapit
-          event-type: BuildScreen
+          REPO: self
+          BRANCH: build
+          FOLDER: dist
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
