@@ -24,16 +24,9 @@ jobs:
           yarn build
       - name: output version
         run: echo "Release version ${{ github.events.inputs.version }}"
-      - name: Push to master
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: BUILD
-          force: true
-          directory: .
       - name: Deploy
         uses: s0/git-publish-subdir-action@develop
-        with:
+        env:
           REPO: self
           BRANCH: build
           FOLDER: dist
