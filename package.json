@@ -12,6 +12,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "core": "ssh://git@github.com:Axilier/core#build",
     "konva": "^7.1.4",
     "react-konva": "^17.0.0-0"
   },
