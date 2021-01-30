@@ -31,6 +31,7 @@ jobs:
           BRANCH: build
           FOLDER: dist
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SQUASH_HISTORY: true 
       - name: Repository Dispatch
         uses: peter-evans/repository-dispatch@v1
         with:
