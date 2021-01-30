@@ -49,3 +49,9 @@ export interface Room {
     width: number;
     doorPosition?: Vector2 | null;
 }
+export interface Tile {
+    name: string;
+    components?: null | Array<string>;
+    shown: boolean;
+    locked: boolean;
+}

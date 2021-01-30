@@ -584,6 +584,10 @@ core-js-pure@^3.0.0:
   version "3.6.5"
   resolved "https://registry.yarnpkg.com/core-js-pure/-/core-js-pure-3.6.5.tgz#c79e75f5e38dbc85a662d91eea52b8256d53b813"
 
+"core@ssh://git@github.com:Axilier/core#build":
+  version "0.1.5"
+  resolved "ssh://git@github.com:Axilier/core#d1e049118260b626c49c7cea9a593003da9774a1"
+
 cosmiconfig@^5.0.0:
   version "5.2.1"
   resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-5.2.1.tgz#040f726809c591e77a17c0a3626ca45b4f168b1a"
