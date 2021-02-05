@@ -25,6 +25,7 @@ jobs:
         run: |
           yarn install --frozen-lockfile
           yarn build
+          yarn postbuild
       - name: output version
         run: echo "Release version ${{ github.events.inputs.version }}"
       - name: Deploy

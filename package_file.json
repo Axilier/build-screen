@@ -1,19 +1,11 @@
 {
   "name": "build-screen",
   "author": "Kieran Lewin <kieran.lewin2000@gmail.com>",
-  "main": "dist/index.js",
-  "module": "dist/index.module.js",
-  "source": "src/Index.tsx",
+  "main": "index.js",
+  "typings": "BuildScreen.d.ts",
   "version": "0.1.5",
   "license": "MIT",
-  "scripts": {
-    "start": "rollup -c --watch --exports default",
-    "build": "rollup -c",
-    "postbuild": "cp package_build.json dist/package.json",
-    "test": "jest"
-  },
   "dependencies": {
-    "core": "ssh://git@github.com:Axilier/core#build",
     "konva": "^7.1.4",
     "react-konva": "^17.0.0-0"
   },
