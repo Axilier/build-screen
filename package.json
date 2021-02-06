@@ -9,7 +9,7 @@
   "scripts": {
     "start": "rollup -c --watch --exports default",
     "build": "rollup -c",
-    "postbuild": "cp package_build.json dist/package.json",
+    "postbuild": "cp package_file.json dist/package.json",
     "test": "jest"
   },
   "dependencies": {
