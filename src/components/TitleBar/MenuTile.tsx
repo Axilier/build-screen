@@ -9,7 +9,7 @@ export interface MenuTileType {
     backgroundColor?: string
 }
 
-export default function MenuTile(props: MenuTileType | "divider") {
+export const MenuTile = (props: MenuTileType | "divider") => {
     const [hovered, setHovered] = useState(false)
     return (props === "divider") ? <div className={"divider"}/> : (
         <div
@@ -21,3 +21,5 @@ export default function MenuTile(props: MenuTileType | "divider") {
         </div>
     )
 }
+
+export default MenuTile;

@@ -16,13 +16,13 @@ export interface TitleBarTileType {
     menuLayout: Array<MenuTileType>
 }
 
-export default function TitleBarTile({name, backgroundColor, hoveredColor, color, menuLayout,menuTileTextColor, menuTileHoverColor}: TitleBarTileType & BasicProps) {
+export const TitleBarTile = ({name, backgroundColor, hoveredColor, color, menuLayout, menuTileTextColor, menuTileHoverColor}: TitleBarTileType & BasicProps) => {
     const [menuOpen, setMenuStatus] = useState(false)
     const [hovered, setHovered] = useState(false)
 
-    window.addEventListener("click",(event:MouseEvent)=> {
+    window.addEventListener("click", (event: MouseEvent) => {
         // @ts-ignore
-        if(event.target.className === "titlebar-tile" && event.target.id === `titlebar-tile-${name}`) return
+        if (event.target.className === "titlebar-tile" && event.target.id === `titlebar-tile-${name}`) return
         setMenuStatus(false)
     })
 
@@ -36,3 +36,5 @@ export default function TitleBarTile({name, backgroundColor, hoveredColor, color
         </div>
     )
 };
+
+export default TitleBarTile;

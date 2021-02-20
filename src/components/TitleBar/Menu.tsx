@@ -1,7 +1,7 @@
 import '../../css/DropMenu.css'
 import * as React from 'react';
+import {useEffect, useState} from 'react';
 import MenuTile, {MenuTileType} from "./MenuTile";
-import {useEffect, useState} from "react";
 
 export interface MenuType {
     open: boolean,
@@ -12,13 +12,13 @@ export interface MenuType {
     backgroundColor?: string
 }
 
-export default function Menu({open, menuTiles, color, tileHoverColor, width, backgroundColor}: MenuType) {
+export const Menu = ({open, menuTiles, color, tileHoverColor, width, backgroundColor}: MenuType) => {
 
-    const [status,setStatus] = useState(open)
+    const [status, setStatus] = useState(open)
 
     useEffect(() => {
         setStatus(open)
-    },[open])
+    }, [open])
 
     return (
         <div className={"drop-menu"}
@@ -29,9 +29,14 @@ export default function Menu({open, menuTiles, color, tileHoverColor, width, bac
                  backgroundColor: (backgroundColor) ? backgroundColor : 'white'
              }}>
             {menuTiles.map(({name, shortcut, onClick}: MenuTileType, index: number) => (
-                <MenuTile key={name + index} name={name} shortcut={shortcut} onClick={() => {setStatus(false); onClick()}}
+                <MenuTile key={name + index} name={name} shortcut={shortcut} onClick={() => {
+                    setStatus(false);
+                    onClick()
+                }}
                           hoverColor={tileHoverColor} backgroundColor={backgroundColor}/>
             ))}
         </div>
     )
 }
+
+export default Menu;

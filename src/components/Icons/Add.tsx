@@ -1,10 +1,8 @@
 import * as React from 'react';
+import {Icon} from "../../Types";
 
-interface Props {
-    type: "basic" | "highlighted"
-}
 
-export default function Add({type} : Props) {
+export default function Add({type}: Icon) {
     return (
         <svg
             viewBox="0 0 16 16"

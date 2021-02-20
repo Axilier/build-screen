@@ -6,7 +6,7 @@ import {MenuTileType} from "../TitleBar/MenuTile";
 import {FixedMouseEvent, SubTool, Vector2} from "../../Types";
 import {AppInfoContext} from "../../Context";
 
-export default function ContextMenu() {
+export const ContextMenu = () => {
 
     const {setSelectedSubTool} = useContext(AppInfoContext)
 
@@ -50,4 +50,6 @@ export default function ContextMenu() {
         </AppInfoContext.Consumer>
     )
 }
+
+export default ContextMenu;
 

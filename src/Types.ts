@@ -1,26 +1,28 @@
+/** @format */
+
 export type FixedMouseEvent = {
-    layerX: number,
-    layerY: number
+    layerX: number;
+    layerY: number;
 } & MouseEvent;
 
 export type FixedDragEvent = {
-    layerX: number,
-    layerY: number
-} & DragEvent
+    layerX: number;
+    layerY: number;
+} & DragEvent;
 
 export interface Vector2 {
-    x: number,
-    y: number
+    x: number;
+    y: number;
 }
 
 export interface Dimension {
-    height: number,
-    width: number
+    height: number;
+    width: number;
 }
 
 export enum Item {
     room,
-    stage
+    stage,
 }
 
 export enum Tool {
@@ -30,47 +32,52 @@ export enum Tool {
     Add,
     drawShape,
     Text,
-    delete
+    delete,
 }
 
 export enum SubTool {
     null,
-    AddDoor
+    AddDoor,
 }
 
 enum ShapeType {
-    Room
+    Room,
 }
 
 type Shape = {
-    name: string
-    type: ShapeType.Room
-}
+    name: string;
+    type: ShapeType.Room;
+};
 
 export type TransformBar = {
-    height: number
-    width: number
-} & Vector2
+    height: number;
+    width: number;
+} & Vector2;
 
 export interface ShapeInfo {
-    width: number,
-    height: number,
-    x: number,
-    y: number
+    width: number;
+    height: number;
+    x: number;
+    y: number;
 }
 
-export interface Room {
-    name: string
-    x: number, // Top left of the room
-    y: number, // Top left of the room
-    height: number,
-    width: number,
-    doorPosition?: Vector2 | null
+export interface RoomType {
+    name: string;
+    x: number; // Top left of the room
+    y: number; // Top left of the room
+    center: Vector2;
+    height: number;
+    width: number;
+    doorPosition?: Vector2 | null;
 }
 
 export interface Tile {
-    name: string,
-    components?: null | Array<string> //TODO change string to component object
-    shown: boolean,
-    locked: boolean
+    name: string;
+    components?: null | Array<string>; // TODO change string to component object
+    shown: boolean;
+    locked: boolean;
+}
+
+export interface Icon {
+    type: 'basic' | 'highlighted';
 }

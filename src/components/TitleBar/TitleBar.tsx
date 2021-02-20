@@ -6,13 +6,15 @@ interface TitleBarProps {
     TileList: Array<TitleBarTileType>
 }
 
-export default function TitleBar({TileList, backgroundColor, color, hoveredColor, menuTileTextColor, menuTileHoverColor}: TitleBarProps & BasicProps) {
+export const TitleBar = ({TileList, backgroundColor, color, hoveredColor, menuTileTextColor, menuTileHoverColor}: TitleBarProps & BasicProps) => {
     return (
         <div className={"titlebar"}>
-            {TileList.map(({name, menuLayout}: TitleBarTileType,index: number) => (
+            {TileList.map(({name, menuLayout}: TitleBarTileType, index: number) => (
                 <TitleBarTile key={"title-tile" + index} name={name} backgroundColor={backgroundColor} hoveredColor={hoveredColor} color={color}
                               menuLayout={menuLayout} menuTileTextColor={menuTileTextColor} menuTileHoverColor={menuTileHoverColor}/>
             ))}
         </div>
     )
 }
+
+export default TitleBar;

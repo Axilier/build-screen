@@ -1,9 +1,9 @@
 import * as React from 'react';
+import {useEffect, useState} from 'react';
 import {Group, Rect} from "react-konva";
 import Konva from "konva";
 import {FixedDragEvent, Vector2} from "../../Types";
 import KonvaEventObject = Konva.KonvaEventObject;
-import {useEffect, useState} from "react";
 
 type Props = {
     index: number
@@ -17,9 +17,9 @@ type Props = {
     show: boolean
 }
 
-export default function AnchorPoint({index, name, x, y, onDragMove, onDragEnd, show}: Props) {
-    const [position,setPosition] = useState<Vector2>({x,y})
-    useEffect(() => setPosition({x,y}),[x,y])
+export const AnchorPoint = ({index, name, x, y, onDragMove, onDragEnd, show}: Props) => {
+    const [position, setPosition] = useState<Vector2>({x, y})
+    useEffect(() => setPosition({x, y}), [x, y])
 
     return (
         <Group
@@ -57,3 +57,5 @@ export default function AnchorPoint({index, name, x, y, onDragMove, onDragEnd, s
         </Group>
     )
 }
+
+export default AnchorPoint;
