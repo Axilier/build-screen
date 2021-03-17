@@ -6,6 +6,8 @@ on:
       version:
         description: 'Release Version'
         required: true
+  repository_dispatch:
+    types: [ build ]
 
 jobs:
   build:
