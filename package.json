@@ -1,0 +1,44 @@
+{
+  "name": "build-screen",
+  "author": "Kieran Lewin <kieran.lewin2000@gmail.com>",
+  "main": "index.js",
+  "typings": "BuildScreen.d.ts",
+  "version": "0.1.5",
+  "license": "MIT",
+  "dependencies": {
+    "konva": "^7.1.4",
+    "react-konva": "^17.0.0-0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^15.0.0",
+    "@rollup/plugin-image": "^2.0.5",
+    "@rollup/plugin-node-resolve": "^10.0.0",
+    "@types/jest": "^26.0.15",
+    "@types/react": "^17.0.0",
+    "@types/shortid": "^0.0.29",
+    "@typescript-eslint/eslint-plugin": "^4.0.1",
+    "@typescript-eslint/parser": "^4.0.1",
+    "eslint-config-airbnb": "^18.2.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-jsx-a11y": "^6.3.1",
+    "eslint-plugin-react": "^7.20.6",
+    "eslint-plugin-react-hooks": "^4.1.0",
+    "prettier": "^2.1.1",
+    "prettier-eslint": "^11.0.0",
+    "react": "^17.0.0",
+    "react-dom": "^17.0.0",
+    "rollup": "^2.26.10",
+    "rollup-plugin-peer-deps-external": "^2.2.3",
+    "rollup-plugin-postcss": "^3.1.8",
+    "rollup-plugin-typescript2": "^0.27.2",
+    "typescript": "^4.0.2"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0",
+    "react-dom": "^17.0.0"
+  },
+  "files": [
+    "dist"
+  ]
+}
