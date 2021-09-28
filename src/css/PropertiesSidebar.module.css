@@ -1,13 +1,15 @@
-.properties-sidebar {
+.main {
     font-family: 'IBM Plex Sans', 'Source Sans Pro', sans-serif;
-    flex: 0 0 auto;
     background-color: white;
-    justify-self: flex-end;
-    height: 100%;
 }
 
-.transform-component {
+.transformComponent {
     display: flex;
     flex-direction: row;
     margin: 10px;
+    justify-content: center;
+}
+
+.buildPropAddComp {
+    margin: 10px auto;
 }

@@ -1,37 +1,57 @@
-import '../../css/DropMenu.css'
 import * as React from 'react';
-import MenuTile, {MenuTileType} from "./MenuTile";
-import {useEffect, useState} from "react";
+import { createContext, CSSProperties, useContext, useEffect, useState } from 'react';
+import styles from '../../css/Menu.module.css';
+import { TitleBarContext } from './TitleBar';
 
 export interface MenuType {
-    open: boolean,
-    menuTiles: Array<MenuTileType>,
-    color: string,
-    tileHoverColor?: string
-    width?: number
-    backgroundColor?: string
+    open?: boolean;
+    color?: string;
+    width?: number;
+    backgroundColor?: string;
+    children: React.ReactNode;
+    tileHoveredColor?: string;
+    style?: CSSProperties;
 }
 
-export default function Menu({open, menuTiles, color, tileHoverColor, width, backgroundColor}: MenuType) {
+export const menuContext = createContext({
+    tileHoveredColor: '',
+    width: 0,
+    backgroundColor: '',
+});
 
-    const [status,setStatus] = useState(open)
+const Menu = ({ open, color, width, backgroundColor, children, tileHoveredColor, style }: MenuType): JSX.Element => {
+    const [status, setStatus] = useState(open);
+    const [hovered, setHovered] = useState(false);
+    const { menuTileTextColor, menuTileHoverColor } = useContext(TitleBarContext);
 
     useEffect(() => {
-        setStatus(open)
-    },[open])
+        setStatus(open);
+    }, [open]);
 
     return (
-        <div className={"drop-menu"}
-             style={{
-                 display: (status) ? "block" : "none",
-                 color,
-                 width: (width) ? `${width}px` : '300px',
-                 backgroundColor: (backgroundColor) ? backgroundColor : 'white'
-             }}>
-            {menuTiles.map(({name, shortcut, onClick}: MenuTileType, index: number) => (
-                <MenuTile key={name + index} name={name} shortcut={shortcut} onClick={() => {setStatus(false); onClick()}}
-                          hoverColor={tileHoverColor} backgroundColor={backgroundColor}/>
-            ))}
+        <div
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            className={styles.menu}
+            style={{
+                ...style,
+                display: status ?? hovered ? 'block' : 'none',
+                color: menuTileTextColor || color,
+                width: width ? `${width}px` : '300px',
+                backgroundColor: backgroundColor || 'white',
+            }}
+        >
+            <menuContext.Provider
+                value={{
+                    tileHoveredColor: menuTileHoverColor || tileHoveredColor || '',
+                    width: width || 300,
+                    backgroundColor: backgroundColor || 'white',
+                }}
+            >
+                {children}
+            </menuContext.Provider>
         </div>
-    )
-}
+    );
+};
+
+export default Menu;

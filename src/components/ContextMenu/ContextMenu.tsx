@@ -1,53 +1,76 @@
 import * as React from 'react';
-import {useContext, useEffect, useState} from 'react';
-import '../../css/DropMenu.css'
-import Menu from "../TitleBar/Menu";
-import {MenuTileType} from "../TitleBar/MenuTile";
-import {FixedMouseEvent, SubTool, Vector2} from "../../Types";
-import {AppInfoContext} from "../../Context";
+import { useContext, useEffect, useState } from 'react';
+import { Menu, MenuTile } from '../TitleBar';
+import { FixedMouseEvent, Item, SubTool, Vector2 } from '../../Types';
+import { AppInfoContext } from '../../Context';
 
-export default function ContextMenu() {
-
-    const {setSelectedSubTool} = useContext(AppInfoContext)
-
-    const roomTiles: Array<MenuTileType> = [
-        {
-            name: "Add Door",
-            shortcut: false,
-            onClick: () => setSelectedSubTool(SubTool.AddDoor)
-        }
-    ]
-    const [clickedPosition, setClickedPosition] = useState<Vector2>({x: 0, y: 0})
+const ContextMenu = (): JSX.Element => {
+    const { setSelectedSubTool, setContextMenuStatus, roomList, setRoomList, selectedRoomName } = useContext(AppInfoContext);
+    const [clickedPosition, setClickedPosition] = useState<Vector2>({ x: 0, y: 0 });
 
     useEffect(() => {
-        window.addEventListener("contextmenu", handleRightClick)
-        return function cleanup() {
-            window.removeEventListener("contextmenu", handleRightClick)
-        }
-    })
+        window.addEventListener('contextmenu', handleRightClick);
+        return () => {
+            window.removeEventListener('contextmenu', handleRightClick);
+        };
+    });
 
-    function handleRightClick(event: MouseEvent) {
-        const ev = event as FixedMouseEvent
-        event.preventDefault()
-        setClickedPosition({x: ev.clientX - 3, y: ev.clientY - 8})
-    }
+    useEffect(() => {
+        window.addEventListener('click', handleClick);
+        return () => {
+            window.removeEventListener('click', handleClick);
+        };
+    });
+
+    const handleClick = () => {
+        setContextMenuStatus('closed');
+    };
+
+    const handleRightClick = (event: MouseEvent) => {
+        const ev = event as FixedMouseEvent;
+        event.preventDefault();
+        setClickedPosition({ x: ev.clientX - 3, y: ev.clientY - 8 });
+    };
+
+    const bringToFront = () => {
+        if (roomList.length === 1) return;
+        const selectedRoomIndex = roomList.findIndex(room => room.name === selectedRoomName);
+        const tempRoomList = roomList.splice(selectedRoomIndex, 1);
+        setRoomList([roomList[selectedRoomIndex], ...tempRoomList]);
+    };
 
     return (
         <AppInfoContext.Consumer>
-            {
-                appInfo => (
-                    <div
-                        style={{position: 'absolute', left: clickedPosition.x, top: clickedPosition.y}}
-                        onMouseLeave={() => appInfo.setContextMenuStatus("closed")}
+            {appInfo => (
+                <div
+                    style={{
+                        position: 'absolute',
+                        left: clickedPosition.x,
+                        top: clickedPosition.y,
+                    }}
+                >
+                    <Menu
+                        open={appInfo.contextMenuStatus === Item.room}
+                        color={'#057EFF'}
+                        width={200}
+                        tileHoveredColor={'#f6f6f6'}
+                        backgroundColor={'#e4e4e4'}
                     >
-                        <Menu open={appInfo.contextMenuStatus !== "closed"} menuTiles={roomTiles} color={"#057EFF"}
-                              width={200} tileHoverColor={"#f6f6f6"}
-                              backgroundColor={"#e4e4e4"}/>
-                    </div>
-                )
-
-            }
+                        <MenuTile
+                            name={'Add Door'}
+                            onClick={() => {
+                                setContextMenuStatus('closed');
+                                setSelectedSubTool(SubTool.AddDoor);
+                            }}
+                        />
+                        <MenuTile name={'Arrange'}>
+                            <MenuTile name={'Bring to front'} onClick={() => bringToFront()} />
+                        </MenuTile>
+                    </Menu>
+                </div>
+            )}
         </AppInfoContext.Consumer>
-    )
-}
+    );
+};
 
+export default ContextMenu;

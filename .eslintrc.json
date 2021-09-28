@@ -1,32 +1,58 @@
 {
     "env": {
+        "node": true,
         "browser": true,
-        "es2020": true
+        "es2021": true
+    },
+    "globals": {
+        "JSX": "readonly"
     },
     "extends": [
+        "airbnb",
+        "plugin:import/recommended",
         "plugin:react/recommended",
         "plugin:react-hooks/recommended",
-        "airbnb",
-        "prettier/react",
-        "prettier"
+        "plugin:@typescript-eslint/recommended",
+        "prettier",
+        "prettier/react"
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaFeatures": {
             "jsx": true
         },
-        "ecmaVersion": 2020,
+        "ecmaVersion": 2021,
         "sourceType": "module"
     },
-    "plugins": [
-        "react",
-        "@typescript-eslint"
-    ],
+    "plugins": ["react", "@typescript-eslint", "prefer-arrow"],
     "rules": {
-        "indent": ["error",4,{ "SwitchCase": 1 }],
-        "react/jsx-indent": [2, 4],
+        "indent": ["off"],
+        "react/jsx-indent": ["off"],
+        "react/no-array-index-key": 1,
+        "react/jsx-filename-extension": [
+            1,
+            {
+                "extensions": [".tsx"]
+            }
+        ],
+        "react/jsx-no-undef": [
+            "error",
+            {
+                "allowGlobals": true
+            }
+        ],
+        "react/jsx-curly-brace-presence": ["off"],
+        "react/jsx-props-no-spreading": 0,
         "import/extensions": "off",
-        "react/jsx-filename-extension": [1, {"extensions":  [".tsx"]}]
+        "semi": ["error", "always"],
+        "no-nested-ternary": 0,
+        "no-use-before-define": "off",
+        "import/prefer-default-export": 0,
+        "jsx-a11y/click-events-have-key-events": "off",
+        "jsx-a11y/interactive-supports-focus": "off",
+        "prefer-arrow-callback": 2,
+        "react/require-default-props": ["off"],
+        "prefer-arrow/prefer-arrow-functions": 2
     },
     "settings": {
         "import/resolver": {

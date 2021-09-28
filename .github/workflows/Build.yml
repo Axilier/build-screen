@@ -25,7 +25,7 @@ jobs:
           node-version: '12'
       - name: install deps and build
         run: |
-          yarn install --frozen-lockfile
+          yarn install
           yarn build
           yarn postbuild
       - name: output version
