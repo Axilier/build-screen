@@ -1,20 +1,8 @@
-/** @format */
-
 import * as React from 'react';
-import { useContext, useEffect, useState } from 'react';
-import '../css/PropertiesSidebar.css';
-import {
-    Button,
-    Lock,
-    Room,
-    Tab,
-    TabMenu,
-    TextBox,
-    Tile,
-    TileList,
-} from 'core';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { Button, Lock, Tab, Tabs, TextBox, List, ListItem, Layout } from 'core';
+import styles from '../css/PropertiesSidebar.module.css';
 import { AppInfoContext } from '../Context';
-import { SubTool } from '../Types';
 
 interface ShapeInfo {
     width: number | string;
@@ -23,64 +11,53 @@ interface ShapeInfo {
     y: number | string;
 }
 
-export const PropertiesSidebar = () => {
-    const defaultInfo = {
+export const PropertiesSidebar = ({ open }: { open: boolean }) => {
+    const { selectedRoomName, roomList, setRoomList, selectedSubTool } = useContext(AppInfoContext);
+
+    const [shapeInfo, setShapeInfo] = useState<ShapeInfo>({
         width: '--',
         height: '--',
         x: '--',
         y: '--',
-    };
-
-    const {
-        selectedShapeName,
-        roomList,
-        setRoomList,
-        selectedSubTool,
-    } = useContext(AppInfoContext);
-
-    const [shapeInfo, setShapeInfo] = useState<ShapeInfo>(defaultInfo);
+    });
     const [selectedTabTop, setSelectedTabTop] = useState(0);
     const [selectedTabBottom, setSelectedTabBottom] = useState(0);
 
-    const menusDisabled = selectedShapeName === null;
+    const menusDisabled = selectedRoomName === null;
 
     useEffect(() => {
-        const { width, height, x, y } =
-            roomList.find(value => value.name === selectedShapeName) ||
-            defaultInfo;
+        const { width, height, x, y } = roomList.find(value => value.name === selectedRoomName) || {
+            width: '--',
+            height: '--',
+            x: '--',
+            y: '--',
+        };
         setShapeInfo({
             width,
             height,
             x,
             y,
         });
-    }, [selectedShapeName]);
-    useEffect(() => {
-        const { width, height, x, y } =
-            roomList.find(value => value.name === selectedShapeName) ||
-            defaultInfo;
-        setShapeInfo({
-            width,
-            height,
-            x,
-            y,
-        });
-    }, [roomList]);
-    useEffect(() => {
-        switch (selectedSubTool) {
-            case SubTool.AddDoor: {
-                setSelectedTabTop(2);
-            }
-        }
-    }, [selectedSubTool]);
+    }, [roomList, selectedRoomName]);
+    // useEffect(() => {
+    //     switch (selectedSubTool) {
+    //         case SubTool.AddDoor:
+    //             setSelectedTabTop(2);
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    // }, [roomList, selectedSubTool, defaultInfo]);
 
-    const upperMenu = (tab: number) => {
-        switch (tab) {
+    const upperMenu = useMemo(() => {
+        switch (selectedTabTop) {
             case 0:
                 return (
-                    <div className={'transform-component'}>
+                    <div className={styles.transformComponent}>
                         <div>
                             <TextBox
+                                variant={'filled'}
+                                size={'small'}
                                 label={'X'}
                                 units={'Sqr'}
                                 disabled={menusDisabled}
@@ -88,6 +65,8 @@ export const PropertiesSidebar = () => {
                                 suffixComponent={<Lock locked={false} />}
                             />
                             <TextBox
+                                variant={'filled'}
+                                size={'small'}
                                 label={'Y'}
                                 units={'Sqr'}
                                 disabled={menusDisabled}
@@ -97,6 +76,8 @@ export const PropertiesSidebar = () => {
                         </div>
                         <div>
                             <TextBox
+                                variant={'filled'}
+                                size={'small'}
                                 label={'Width'}
                                 units={'Sqr'}
                                 disabled={menusDisabled}
@@ -104,6 +85,8 @@ export const PropertiesSidebar = () => {
                                 suffixComponent={<Lock locked={false} />}
                             />
                             <TextBox
+                                variant={'filled'}
+                                size={'small'}
                                 label={'Height'}
                                 units={'Sqr'}
                                 disabled={menusDisabled}
@@ -115,64 +98,40 @@ export const PropertiesSidebar = () => {
                 );
             case 1:
                 return <div>Colour</div>;
-            case 2:
-                return (
-                    <>
-                        <TileList>
-                            <Tile
-                                label={'Door'}
-                                locked={false}
-                                icon={<Room />}
-                            />
-                            <Tile
-                                label={'Door'}
-                                locked={false}
-                                icon={<Room />}
-                            />
-                            <Tile
-                                label={'Door'}
-                                locked={false}
-                                icon={<Room />}
-                            />
-                            <Tile
-                                label={'Door'}
-                                locked={false}
-                                icon={<Room />}
-                            />
-                        </TileList>
-                        <Button
-                            label={'Add Component'}
-                            variant={'contained'}
-                            size={'230px'}
-                            className={'build-prop-add-comp'}
-                            onClick={() => null}
-                            disabled={menusDisabled}
-                        />
-                    </>
-                );
             default:
                 return <div />;
         }
-    };
+    }, [menusDisabled, selectedTabTop, shapeInfo.height, shapeInfo.width, shapeInfo.x, shapeInfo.y]);
+    const lowerMenu = useMemo(() => {
+        switch (selectedTabBottom) {
+            case 1:
+                return <div>rooms</div>;
+            case 0:
+            default:
+                return roomList.length !== 0 ? (
+                    <List>
+                        {roomList.map(room => (
+                            <ListItem key={room.name}>{room.name}</ListItem>
+                        ))}
+                    </List>
+                ) : (
+                    <h3 style={{ textAlign: 'center', marginTop: '10px' }}>No objects created yet</h3>
+                );
+        }
+    }, [roomList, selectedTabBottom]);
 
     return (
-        <div className={'properties-sidebar'} style={{ width: 500 }}>
-            <TabMenu
-                onChange={value => setSelectedTabTop(value)}
-                tabFontColor={'black'}
-            >
+        <div className={styles.main} style={{ width: 500, display: open ? 'block' : 'none' }}>
+            <Tabs orientation={'row'} onChange={value => setSelectedTabTop(value)} tabFontColor={'black'}>
                 <Tab>Transform</Tab>
                 <Tab>Colour</Tab>
-                <Tab>Components</Tab>
-            </TabMenu>
-            {upperMenu(selectedTabTop)}
-            <TabMenu
-                onChange={value => setSelectedTabBottom(value)}
-                tabFontColor={'black'}
-            >
+            </Tabs>
+            {upperMenu}
+            <Tabs orientation={'row'} onChange={value => setSelectedTabBottom(value)} tabFontColor={'black'}>
                 <Tab>Layers</Tab>
                 <Tab>Rooms</Tab>
-            </TabMenu>
+            </Tabs>
+            {lowerMenu}
         </div>
     );
 };

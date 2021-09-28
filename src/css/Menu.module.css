@@ -1,4 +1,5 @@
-.drop-menu {
+.menu {
+    user-select: none;
     padding: 5px 0;
     border-radius: 4px;
     margin-top: 5px;
@@ -8,14 +9,15 @@
     z-index: 100;
 }
 
-.dropdown-tile {
+.tile {
     font-size: 15px;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     padding: 5px 15px;
+    position: relative;
 }
 
-.dropdown-tile:hover {
+.tile:hover {
     cursor: pointer;
 }

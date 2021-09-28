@@ -14,7 +14,9 @@
   },
   "dependencies": {
     "core": "ssh://git@github.com:Axilier/core#build",
+    "eslint-plugin-prefer-arrow": "^1.2.3",
     "konva": "^7.1.4",
+    "react-bootstrap-icons": "^1.5.0",
     "react-konva": "^17.0.0-0"
   },
   "devDependencies": {

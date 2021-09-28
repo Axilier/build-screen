@@ -1,8 +1,10 @@
-/** @format */
-
 export type FixedMouseEvent = {
     layerX: number;
     layerY: number;
+    target: {
+        className: string;
+        id: string;
+    };
 } & MouseEvent;
 
 export type FixedDragEvent = {
@@ -18,6 +20,14 @@ export interface Vector2 {
 export interface Dimension {
     height: number;
     width: number;
+}
+
+export interface BasicProps {
+    backgroundColor: string;
+    hoveredColor: string;
+    color: string;
+    menuTileTextColor?: string;
+    menuTileHoverColor?: string;
 }
 
 export enum Item {
@@ -65,10 +75,11 @@ export interface RoomType {
     name: string;
     x: number; // Top left of the room
     y: number; // Top left of the room
-    center: Vector2;
     height: number;
     width: number;
     doorPosition?: Vector2 | null;
+    doorSize?: number;
+    doorRotation?: 'ver' | 'hor';
 }
 
 export interface Tile {

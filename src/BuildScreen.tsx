@@ -1,73 +1,52 @@
-/** @format */
 import * as React from 'react';
-import { useState } from 'react';
-import './css/BuildScreen.css';
+import { useEffect, useState } from 'react';
+import { Cursor, CursorFill, House } from 'react-bootstrap-icons';
+import { Layout } from 'core';
+import styles from './css/BuildScreen.module.css';
+import './css/globals.css';
 import TileLogo from './assets/TileLogo';
-import TitleBar from './components/TitleBar/TitleBar';
-import { TitleBarTileType } from './components/TitleBar/TitleBarTile';
 import BuildStage from './components/BuildStage/BuildStage';
-import { Mouse, Selector } from './components/Icons';
 import { Item, RoomType, SubTool, Tool } from './Types';
 import { AppInfoContext } from './Context';
 import ContextMenu from './components/ContextMenu/ContextMenu';
 import PropertiesSidebar from './components/PropertiesSidebar';
-import AddRoom from './components/Icons/AddRoom';
+import { MenuTile, TitleBar } from './components/TitleBar';
+import TitleBarTile from './components/TitleBar/TitleBarTile';
+import useEventListener from './components/useEventListener';
 
-const BuildScreen = (): JSX.Element => {
+interface Props {
+    fileSaved: boolean;
+    fileSaving: boolean;
+    onMapChange: (map: Array<RoomType>) => void;
+    saveRequested?: (map: Array<RoomType>) => void;
+}
+
+const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested }: Props): JSX.Element => {
     const [selectedTool, setSelectedTool] = useState<Tool>(Tool.Cursor);
-    const [selectedSubTool, setSelectedSubTool] = useState<SubTool>(
-        SubTool.null,
-    );
+    const [selectedSubTool, setSelectedSubTool] = useState<SubTool>(SubTool.null);
     const [cursor, setCursor] = useState<string>('default');
-    const [contextMenuStatus, setContextMenuStatus] = useState<Item | 'closed'>(
-        'closed',
-    );
-    const [selectedShapeName, setSelectedShapeName] = useState<string | null>(
-        null,
-    );
-    const [roomList, setRoomList] = useState<Array<RoomType>>([
-        // {
-        //     name: 'room-01',
-        //     x: 10,
-        //     y: 10,
-        //     center: { x: 14.5, y: 14.5 },
-        //     height: 10,
-        //     width: 10,
-        // },
-    ]);
+    const [contextMenuStatus, setContextMenuStatus] = useState<Item | 'closed'>('closed');
+    const [selectedShapeName, setSelectedShapeName] = useState<string | null>(null);
+    const [roomList, setRoomList] = useState<Array<RoomType>>([]);
 
-    const titleBarLayout: Array<TitleBarTileType> = [
-        {
-            name: 'File',
-            menuLayout: [
-                {
-                    name: 'New',
-                    shortcut: 'Ctrl+N',
-                    onClick: () => console.log('New'),
-                },
-                {
-                    name: 'Open',
-                    shortcut: 'Ctrl+O',
-                    onClick: () => console.log('Open'),
-                },
-            ],
-        },
-        {
-            name: 'Edit',
-            menuLayout: [
-                {
-                    name: 'Undo',
-                    shortcut: 'Ctrl+Z',
-                    onClick: () => console.log('Undo'),
-                },
-                {
-                    name: 'Redo',
-                    shortcut: 'Ctrl+Shift+Z',
-                    onClick: () => console.log('Redo'),
-                },
-            ],
-        },
-    ];
+    const [propertiesWindowStatus, setPropertiesWindowStatus] = useState(false);
+
+    useEffect(() => {
+        const keydown = (event: KeyboardEvent) => {
+            if (event.key === '`') {
+                setPropertiesWindowStatus(!propertiesWindowStatus);
+            }
+        };
+        document.addEventListener('keydown', keydown);
+        return () => document.removeEventListener('keydown', keydown);
+    });
+    useEffect(() => onMapChange(roomList), [onMapChange, roomList]);
+
+    useEventListener('keydown', e => {
+        if (e.key !== 's' || !e.ctrlKey || !saveRequested) return;
+        e.preventDefault();
+        saveRequested(roomList);
+    });
 
     return (
         <AppInfoContext.Provider
@@ -82,88 +61,85 @@ const BuildScreen = (): JSX.Element => {
                 setContextMenuStatus,
                 selectedSubTool,
                 setSelectedSubTool,
-                selectedShapeName,
-                setSelectedShapeName,
+                selectedRoomName: selectedShapeName,
+                setSelectedRoomName: setSelectedShapeName,
             }}
         >
-            <div className={'build-screen'}>
-                <div className={'toolbar'}>
-                    <div className={'logo-container'}>
+            <Layout orientation={'column'} className={styles.buildScreen}>
+                <div className={styles.toolbar}>
+                    <div className={styles.logoContainer}>
                         <TileLogo />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <div className={'filename'}>{'test'}</div>
-                        <TitleBar
-                            backgroundColor={'#FFFFFF'}
-                            color={'black'}
-                            hoveredColor={'#F3F3F3'}
-                            TileList={titleBarLayout}
-                            menuTileTextColor={'black'}
-                        />
-                    </div>
-                    <div className={'toolbar-line'} />
+                    <Layout orientation={'column'}>
+                        <div className={styles.filename}>{'test'}</div>
+                        <TitleBar backgroundColor={'#FFFFFF'} color={'black'} hoveredColor={'#F3F3F3'} menuTileTextColor={'black'}>
+                            <TitleBarTile name={'File'}>
+                                <MenuTile name={'New'} shortcut={'Ctrl+N'} onClick={() => console.log('New')} />
+                                <MenuTile name={'Open'} shortcut={'Ctrl+O'} onClick={() => console.log('Open')} />
+                                <MenuTile
+                                    name={'Save'}
+                                    shortcut={'Ctrl+S'}
+                                    onClick={() => {
+                                        if (saveRequested) saveRequested(roomList);
+                                    }}
+                                />
+                            </TitleBarTile>
+                            <TitleBarTile name={'Edit'}>
+                                <MenuTile name={'Undo'} shortcut={'Ctrl+Z'} onClick={() => console.log('Undo')} />
+                                <MenuTile name={'Redo'} shortcut={'Ctrl+Shift+Z'} onClick={() => console.log('Redo')} />
+                            </TitleBarTile>
+                            <h5 className={styles.savingAlert}>{fileSaved ? (fileSaving ? 'File Saving...' : 'File Saved.') : 'Unsaved Changes'}</h5>
+                        </TitleBar>
+                    </Layout>
+                    <div className={styles.toolbarLine} />
                 </div>
-                <div className={'main-body'}>
-                    <div className={'side-toolbar'}>
+                <Layout orientation={'row'}>
+                    <div className={styles.sideToolbar}>
                         <div
                             role={'tab'}
-                            className={'side-toolbar-icon-container'}
+                            className={styles.sideToolbarIconContainer}
                             onClick={() => {
-                                setSelectedTool(
-                                    selectedTool === Tool.Cursor
-                                        ? Tool.null
-                                        : Tool.Cursor,
-                                );
+                                setSelectedTool(selectedTool === Tool.Cursor ? Tool.null : Tool.Cursor);
                                 setCursor('default');
                             }}
                         >
-                            {selectedTool === Tool.Cursor ? (
-                                <Mouse type={'highlighted'} />
-                            ) : (
-                                <Mouse type={'basic'} />
-                            )}
+                            <CursorFill
+                                color={selectedTool === Tool.Cursor ? '#3761FF' : '#303c42'}
+                                className={styles.sidebarIcon}
+                                height={22}
+                                width={22}
+                            />
                         </div>
                         <div
                             role={'tab'}
-                            className={'side-toolbar-icon-container'}
+                            className={styles.sideToolbarIconContainer}
                             onClick={() => {
-                                setSelectedTool(
-                                    selectedTool === Tool.Selector
-                                        ? Tool.null
-                                        : Tool.Selector,
-                                );
+                                setSelectedTool(selectedTool === Tool.Selector ? Tool.null : Tool.Selector);
                                 setCursor('default');
                             }}
                         >
-                            {selectedTool === Tool.Selector ? (
-                                <Selector type={'highlighted'} />
-                            ) : (
-                                <Selector type={'basic'} />
-                            )}
+                            <Cursor
+                                color={selectedTool === Tool.Selector ? '#3761FF' : '#303c42'}
+                                className={styles.sidebarIcon}
+                                height={22}
+                                width={22}
+                            />
                         </div>
                         <div
                             role={'tab'}
-                            className={'side-toolbar-icon-container'}
+                            className={styles.sideToolbarIconContainer}
                             onClick={() => {
-                                setSelectedTool(
-                                    selectedTool === Tool.Add
-                                        ? Tool.null
-                                        : Tool.Add,
-                                );
+                                setSelectedTool(selectedTool === Tool.Add ? Tool.null : Tool.Add);
                                 setCursor('crosshair');
                             }}
                         >
-                            {selectedTool === Tool.Add ? (
-                                <AddRoom type={'highlighted'} />
-                            ) : (
-                                <AddRoom type={'basic'} />
-                            )}
+                            <House color={selectedTool === Tool.Add ? '#3761FF' : '#303c42'} className={styles.sidebarIcon} height={22} width={22} />
                         </div>
                     </div>
-                    <BuildStage />
-                    <PropertiesSidebar />
-                </div>
-            </div>
+                    <BuildStage propertiesWindow={propertiesWindowStatus} />
+                    <PropertiesSidebar open={propertiesWindowStatus} />
+                </Layout>
+            </Layout>
             <ContextMenu />
         </AppInfoContext.Provider>
     );

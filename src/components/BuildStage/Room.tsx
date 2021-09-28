@@ -1,667 +1,362 @@
-/** @format */
-
-import * as React from 'react';
-import { useContext, useEffect, useRef, useState } from 'react';
-import { Group, Line, Rect } from 'react-konva';
 import Konva from 'konva';
-import {
-    Dimension,
-    FixedDragEvent,
-    Item,
-    RoomType,
-    SubTool,
-    Tool,
-    TransformBar,
-    Vector2,
-} from '../../Types';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Group, Line, Rect } from 'react-konva';
+import { Dimension, FixedDragEvent, Item, RoomType, SubTool, Tool, Vector2 } from '../../Types';
 import { AppInfoContext, BuildStageContext } from '../../Context';
-import { getRoundedUnit, getShapeInfo, roundCoordinate } from './Utils';
+import { getShapeInfo, reOrderPoints, roundCoordinate } from './Utils';
+import AnchorPoint from './AnchorPoint';
+import useEventListener from '../useEventListener';
 import KonvaEventObject = Konva.KonvaEventObject;
 
 const Room = ({
+    x: initX,
+    y: initY,
+    height: initHeight,
+    width: initWidth,
     index,
     name,
-    x,
-    y,
-    center,
-    height,
-    width,
-    doorPosition,
+    doorPosition: initDoorPosition,
 }: RoomType & { index: number }): JSX.Element => {
-    const shape = useRef<Konva.Rect>(null);
-    const line = useRef<Konva.Line>(null);
     const group = useRef<Konva.Group>(null);
-    const backgroundPos = group.current
-        ?.getStage()
-        ?.findOne('.BACKGROUND')
-        .getPosition() || { x: 0, y: 0 };
+    const lineGroup = useRef<Konva.Group>(null);
+    const shape = useRef<Konva.Rect>(null);
+    const { spacing, roomList, setRoomList, selectedRoomName, selectedSubTool, setSelectedSubTool } = useContext(AppInfoContext);
+    const { backgroundPosition, backgroundSize, mousePosition } = useContext(BuildStageContext);
+    const calculateCorners = useCallback(
+        (curX: number, curY: number, curHeight: number, curWidth: number, curBackgroundPosition: Vector2) => [
+            {
+                x: curX + curBackgroundPosition.x - spacing / 2,
+                y: curY + curBackgroundPosition.y - spacing / 2,
+            },
+            {
+                x: curX + curBackgroundPosition.x + curWidth + spacing / 2,
+                y: curY + curBackgroundPosition.y - spacing / 2,
+            },
+            {
+                x: curX + curBackgroundPosition.x + curWidth + spacing / 2,
+                y: curY + curBackgroundPosition.y + curHeight + spacing / 2,
+            },
+            {
+                x: curX + curBackgroundPosition.x - spacing / 2,
+                y: curY + curBackgroundPosition.y + curHeight + spacing / 2,
+            },
+        ],
+        [spacing],
+    );
 
-    const {
-        selectedTool,
-        setCursor,
-        selectedSubTool,
-        selectedShapeName,
-        setSelectedShapeName,
-        setRoomList,
-        roomList,
-        spacing,
-    } = useContext(AppInfoContext);
-
-    const halfSpacing = spacing / 2;
-    const { mousePosition } = useContext(BuildStageContext);
-
-    const [backgroundPosition, setBackgroundPosition] = useState(backgroundPos);
-    const [dimensions, setDimensions] = useState<Dimension>({ height, width });
-    const [position, setPosition] = useState<Vector2>({ x, y });
+    const [height, setHeight] = useState(initHeight * spacing);
+    const [width, setWidth] = useState(initWidth * spacing);
+    const [x, setX] = useState(initX * spacing);
+    const [y, setY] = useState(initY * spacing);
+    const [doorPosition, setDoorPosition] = useState<Vector2>(initDoorPosition || { x: 0, y: 0 });
+    const [doorSize, setDoorSize] = useState(4);
+    const [doorRotation, setDoorRotation] = useState<'hor' | 'ver'>('hor');
     const [corners, setCorners] = useState<Array<Vector2>>(() =>
-        getCornersCoords(dimensions, position),
+        calculateCorners(initX * spacing, initY * spacing, initHeight * spacing, initWidth * spacing, backgroundPosition),
     );
-    const [transformBarInfo, setTransformBarInfo] = useState(() =>
-        getTransformBarInfo(corners),
-    );
-    const [doorPositionState, setDoorPositionState] = useState<Vector2 | null>(
-        doorPosition || null,
-    );
-    const [addDoorMode, setAddDoorMode] = useState(false);
 
     useEffect(() => {
-        if (!addDoorMode) return;
-        onMouseMove(mousePosition);
-    }, [mousePosition]);
-    useEffect(() => {
-        setBackgroundPosition(backgroundPos);
-    }, [backgroundPos.x, backgroundPos.y]);
-    useEffect(() => {
-        const calCorners = getCornersCoords({ height, width }, { x, y });
-        setDimensions({ height, width });
-        setPosition({ x, y });
-        setTransformBarInfo(getTransformBarInfo(calCorners));
-        setCorners(calCorners);
-    }, [x, y, height, width, backgroundPosition.x, backgroundPosition.y]);
-    useEffect(() => updateRoomList(), [position, dimensions]);
-    useEffect(() => setAddDoorMode(selectedSubTool === SubTool.AddDoor), [
-        selectedSubTool,
-    ]);
+        setCorners([...calculateCorners(initX * spacing, initY * spacing, initHeight * spacing, initWidth * spacing, backgroundPosition)]);
+    }, [backgroundPosition, setCorners, initX, initY, initHeight, initWidth, calculateCorners, spacing]);
 
-    function updateRoomList() {
+    const updateShape = () => {
+        const pointsOrdered = reOrderPoints([...corners]);
+        const shapeInfo = getShapeInfo(pointsOrdered, spacing, backgroundPosition);
+        setX(shapeInfo.x);
+        setY(shapeInfo.y);
+        setHeight(shapeInfo.height);
+        setWidth(shapeInfo.width);
         const tempRoomList = [...roomList];
         tempRoomList[index] = {
+            x: shapeInfo.x / spacing,
+            y: shapeInfo.y / spacing,
+            height: shapeInfo.height / spacing,
+            width: shapeInfo.width / spacing,
             name,
-            x: position.x,
-            y: position.y,
-            center,
-            height: dimensions.height,
-            width: dimensions.width,
-            doorPosition: tempRoomList[index].doorPosition,
         };
-        setRoomList(tempRoomList);
-    }
+        setRoomList([...tempRoomList]);
+    };
 
-    // region getCorners
-    // NOTE Ran at the start to get the corner points from the dimensions
-    // DOC Returns Konva coordinates not Axilier units
-    function getCornersCoords(dim: Dimension, pos: Vector2): Array<Vector2> {
-        const { x: curX, y: curY } = unitToCoordinate(pos);
-        return [
-            {
-                x: curX - halfSpacing - spacing,
-                y: curY - halfSpacing - spacing,
-            },
-            {
-                x: curX + width * spacing - halfSpacing,
-                y: curY - halfSpacing - spacing,
-            },
-            {
-                x: curX + width * spacing - halfSpacing,
-                y: curY + height * spacing - halfSpacing,
-            },
-            {
-                x: curX - halfSpacing - spacing,
-                y: curY + height * spacing - halfSpacing,
-            },
-        ];
-    }
+    const onDrag = (event: KonvaEventObject<DragEvent>) => {
+        // TODO Optimise dragging costs - while you drag a shape across a layer that layer must be redrawn per cycle of the move event listener.
+        //  To avoid this performance cost, move the shape to a dedicated layer while dragging, then move it back to original layer at drag end.
+        const newPos = roundCoordinate(event.target.attrs, backgroundPosition, spacing);
+        const contain = (dimension: number, backgroundDimension: number, vecPart: 'x' | 'y') =>
+            newPos[vecPart] <= 0
+                ? spacing
+                : newPos[vecPart] >= backgroundDimension - dimension
+                ? backgroundDimension - dimension - spacing
+                : newPos[vecPart];
+        const contained = {
+            x: contain(width, backgroundSize.width, 'x'),
+            y: contain(height, backgroundSize.height, 'y'),
+        };
+        const intersects = roomList.some((room, roomIndex) => {
+            return roomIndex === index
+                ? false
+                : haveIntersection(room, { x: contained.x / spacing, y: contained.y / spacing, height: height / spacing, width: width / spacing });
+        });
+        if (!intersects) {
+            shape.current?.position({
+                x: contained.x + backgroundPosition.x,
+                y: contained.y + backgroundPosition.y,
+            });
+            setX(contained.x);
+            setY(contained.y);
+            setCorners([...calculateCorners(contained.x, contained.y, height, width, backgroundPosition)]);
+            setRoomList(
+                roomList.map((room, roomIndex) =>
+                    roomIndex === index
+                        ? {
+                              ...room,
+                              x: contained.x / spacing,
+                              y: contained.y / spacing,
+                          }
+                        : room,
+                ),
+            );
+        } else {
+            shape.current?.position({
+                x: x + backgroundPosition.x,
+                y: y + backgroundPosition.y,
+            });
+        }
+    };
 
-    function getCornersUnits(pos: Vector2, dim: Dimension) {
-        return [
-            { x: pos.x, y: pos.y },
-            {
-                x: pos.x + dim.width,
-                y: pos.y,
-            },
-            {
-                x: pos.x + dim.width,
-                y: pos.y + dim.height,
-            },
-            {
-                x: pos.x,
-                y: pos.y + dim.height,
-            },
-        ];
-    }
+    const onCornerDrag = (event: KonvaEventObject<FixedDragEvent>, cornerIndex: number) => {
+        const roundedPos = roundCoordinate({ x: event.evt.layerX, y: event.evt.layerY }, backgroundPosition, spacing);
+        const newCornerPosition = {
+            x: roundedPos.x + backgroundPosition.x,
+            y: roundedPos.y + backgroundPosition.y,
+        };
+        const cornerBehind = cornerIndex === 0 ? corners.length - 1 : cornerIndex - 1;
+        const cornerAhead = cornerIndex + 1 === corners.length ? 0 : cornerIndex + 1;
+        const tempCorners = corners.map((corner, tempCornerIndex) => {
+            if (tempCornerIndex === cornerBehind) {
+                if (cornerBehind % 2 === 0) {
+                    return { x: corner.x, y: newCornerPosition.y + spacing / 2 };
+                }
+                return { x: newCornerPosition.x + spacing / 2, y: corner.y };
+            }
+            if (tempCornerIndex === cornerAhead) {
+                if (cornerAhead % 2 === 0) {
+                    return { x: newCornerPosition.x + spacing / 2, y: corner.y };
+                }
+                return { x: corner.x, y: newCornerPosition.y + spacing / 2 };
+            }
+            if (tempCornerIndex === cornerIndex)
+                return {
+                    x: newCornerPosition.x + spacing / 2,
+                    y: newCornerPosition.y + spacing / 2,
+                };
+            return corner;
+        });
+        const orderedCorners = reOrderPoints(tempCorners);
+        const shapeInfo = getShapeInfo(orderedCorners, spacing, backgroundPosition);
+        const intersects = roomList.some((room, roomIndex) => {
+            return roomIndex === index
+                ? false
+                : haveIntersection(room, {
+                      x: shapeInfo.x / spacing,
+                      y: shapeInfo.y / spacing,
+                      height: shapeInfo.height / spacing,
+                      width: shapeInfo.width / spacing,
+                  });
+        });
+        if (!intersects) {
+            lineGroup.current?.findOne(`.ANCHOR-${cornerIndex}`).position(newCornerPosition);
+            setCorners([...tempCorners]);
+        } else {
+            lineGroup.current
+                ?.findOne(`.ANCHOR-${cornerIndex}`)
+                .position({ x: corners[cornerIndex].x - spacing / 2, y: corners[cornerIndex].y - spacing / 2 });
+        }
+    };
 
-    // endregion
-
-    function pointToArray(pointList: Array<Vector2>): Array<number> {
-        return pointList.reduce((total, el) => {
+    const pointToArray = (pointList: Array<Vector2>): number[] => {
+        return [...pointList].reduce((total, el) => {
             total.push(el.x);
             total.push(el.y);
             return total;
-        }, [] as Array<number>);
-    }
+        }, [] as number[]);
+    };
 
-    function onClick() {
-        setSelectedShapeName(name);
-    }
+    const haveIntersection = (r1: Vector2 & Dimension, r2: Vector2 & Dimension) =>
+        !(r2.x > r1.x + r1.width || r2.x + r2.width < r1.x || r2.y > r1.y + r1.height || r2.y + r2.height < r1.y);
 
-    function cornerResize(cornerIndex: number, newPosition: Vector2) {
-        const tempCornersWithStroke = [...corners];
-        const newPositionRounded =
-            roundCoordinate(newPosition, backgroundPosition, spacing) ||
-            newPosition;
-        const effectedCornerBehind =
-            cornerIndex === 0 ? corners.length - 1 : cornerIndex - 1;
-        const effectedCornerAhead =
-            cornerIndex + 1 === corners.length ? 0 : cornerIndex + 1;
-        if (effectedCornerBehind % 2 === 0) {
-            tempCornersWithStroke[effectedCornerBehind].y =
-                newPositionRounded.y + halfSpacing;
-        } else {
-            tempCornersWithStroke[effectedCornerBehind].x =
-                newPositionRounded.x + halfSpacing;
-        }
-        if (effectedCornerAhead % 2 === 0) {
-            tempCornersWithStroke[effectedCornerAhead].x =
-                newPositionRounded.x + halfSpacing;
-        } else {
-            tempCornersWithStroke[effectedCornerAhead].y =
-                newPositionRounded.y + halfSpacing;
-        }
-        tempCornersWithStroke[cornerIndex] = {
-            x: newPositionRounded.x + halfSpacing,
-            y: newPositionRounded.y + halfSpacing,
-        };
-        group.current
-            ?.findOne(`.ANCHOR-${cornerIndex}`)
-            .position(newPositionRounded);
-        line.current?.setAttr('points', tempCornersWithStroke);
-        setCorners(tempCornersWithStroke);
-    }
+    const closestOnSegment = useCallback(
+        (point: Vector2, { start, end }: { start: Vector2; end: Vector2 }, widthConstraint?: number): Vector2 | false => {
+            const orderedX = [start, end].sort((a, b) => a.x - b.x);
+            const orderedY = [start, end].sort((a, b) => a.y - b.y);
+            const constrainedSide = (indexSelector: 'x' | 'y', orderedPoints: Array<Vector2>) => {
+                return point[indexSelector] < orderedPoints[0][indexSelector] + spacing
+                    ? orderedPoints[0][indexSelector] + spacing
+                    : point[indexSelector] > orderedPoints[1][indexSelector] - (widthConstraint || 0)
+                    ? orderedPoints[1][indexSelector] - (widthConstraint || 0)
+                    : point[indexSelector];
+            };
+            if (start.x === end.x) {
+                if (widthConstraint && widthConstraint > Math.abs(end.y - start.y) - spacing) return false;
+                return {
+                    x: start.x,
+                    y: constrainedSide('y', orderedY),
+                };
+            }
+            if (start.y === end.y) {
+                if (widthConstraint && widthConstraint > Math.abs(end.x - start.x) - spacing) return false;
+                return {
+                    x: constrainedSide('x', orderedX),
+                    y: start.y,
+                };
+            }
+            return { x: 0, y: 0 };
+        },
+        [spacing],
+    );
 
-    function unitToCoordinate(coordinate: Vector2): Vector2 {
-        console.log(backgroundPosition);
-        const { x: backgroundX, y: backgroundY } = backgroundPosition;
-        return {
-            x: coordinate.x * spacing + backgroundX,
-            y: coordinate.y * spacing + backgroundY,
-        };
-    }
+    const onMouseMove = useCallback(
+        (curMousePosition: Vector2) => {
+            if (selectedSubTool !== SubTool.AddDoor) return;
+            const sideClosestPoints = corners.map((corner, cornerIndex) => {
+                const closestPoint = closestOnSegment(
+                    curMousePosition,
+                    {
+                        start: corners[cornerIndex],
+                        end: corners[cornerIndex === corners.length - 1 ? 0 : cornerIndex + 1],
+                    },
+                    doorSize * spacing,
+                );
+                const distanceToPoint =
+                    closestPoint !== false ? Math.hypot(curMousePosition.x - closestPoint.x, curMousePosition.y - closestPoint.y) : false;
+                return {
+                    distanceToPoint: distanceToPoint || 0,
+                    point: closestPoint || { x: 0, y: 0 },
+                    index: cornerIndex,
+                    doorFits: !(closestPoint === false || distanceToPoint === false),
+                };
+            });
+            const closestPoint = sideClosestPoints
+                .filter(side => side.doorFits)
+                .sort((a, b) => {
+                    return a.distanceToPoint - b.distanceToPoint;
+                })[0];
+            setDoorRotation(closestPoint.index % 2 === 0 ? 'hor' : 'ver');
+            setDoorPosition({
+                x: closestPoint.point.x - spacing / 2,
+                y: closestPoint.point.y - spacing / 2,
+            });
+        },
+        [closestOnSegment, corners, doorSize, selectedSubTool, spacing],
+    );
 
-    // region reorderPoints
-    // NOTE DOES NOT WORK WITH CONVEX SHAPES -- this is not needed for squares add it later if needed
-    function reorderPoints(
-        points: Array<number> | Array<Vector2>,
-    ): Array<Vector2> {
-        const pointsObjects: Array<Vector2> = [];
-        if (typeof points[0] === 'number') {
-            for (let i = 0; i <= points.length - 1; i += 2) {
-                pointsObjects.push({
-                    x: points[i] as number,
-                    y: points[i + 1] as number,
-                });
+    const handleWheel = (event: WheelEvent) => {
+        if (selectedRoomName !== name) return;
+        if (event.deltaY < 0) {
+            if (doorRotation === 'ver') {
+                const bottomLeft = doorPosition.y + (doorSize + 1) * spacing;
+                if (bottomLeft <= corners[2].y - spacing / 2) {
+                    setDoorSize(doorSize + 1);
+                }
+            } else if (doorRotation === 'hor') {
+                const bottomRight = doorPosition.x + (doorSize + 1) * spacing;
+                if (bottomRight <= corners[1].x - spacing / 2) {
+                    setDoorSize(doorSize + 1);
+                }
             }
         } else {
-            pointsObjects.push(...(points as Array<Vector2>));
+            if (doorSize <= 1) return;
+            setDoorSize(doorSize - 1);
         }
-        pointsObjects.sort((a, b) => {
-            if (a.x === b.x) return a.y - b.y;
-            return a.x - b.x;
-        });
-        return [
-            pointsObjects[0],
-            pointsObjects[2],
-            pointsObjects[3],
-            pointsObjects[1],
-        ];
-    }
-
-    // endregion
-
-    // region sideResize
-    function sideResize(
-        sideIndex: number,
-        event: KonvaEventObject<FixedDragEvent>,
-    ) {
-        const tempCorners = [...corners];
-        const affectedCorners = [
-            sideIndex,
-            sideIndex + 1 === corners.length ? 0 : sideIndex + 1,
-        ];
-        const roundedCoordinate = roundCoordinate(
-            {
-                x: event.evt.layerX,
-                y: event.evt.layerY,
-            },
-            backgroundPosition,
-            spacing,
+    };
+    const onClick = () => {
+        if (selectedRoomName !== name || selectedSubTool !== SubTool.AddDoor) return;
+        setSelectedSubTool(SubTool.null);
+        setRoomList(
+            roomList.map((room, roomIndex) =>
+                roomIndex === index
+                    ? {
+                          ...room,
+                          doorPosition: { x: doorPosition.x - x, y: doorPosition.y - y },
+                          doorSize,
+                          doorRotation,
+                      }
+                    : room,
+            ),
         );
-        if (!roundedCoordinate) return;
-        if (sideIndex % 2 === 0) {
-            tempCorners[affectedCorners[0]].y =
-                roundedCoordinate.y - halfSpacing;
-            tempCorners[affectedCorners[1]].y =
-                roundedCoordinate.y - halfSpacing;
-        } else {
-            tempCorners[affectedCorners[0]].x =
-                roundedCoordinate.x - halfSpacing;
-            tempCorners[affectedCorners[1]].x =
-                roundedCoordinate.x - halfSpacing;
-        }
-        line.current
-            ?.getStage()
-            ?.findOne(`.${name}`)
-            .setAttr('points', pointToArray(tempCorners));
-        updateShape(tempCorners);
-    }
-
-    // endregion
-
-    function updateShape(inputCorners?: Array<Vector2> | null) {
-        const pointsOrdered = reorderPoints(
-            inputCorners || getCornersCoords(dimensions, position),
-        );
-        const shapeInfo = getShapeInfo(
-            pointsOrdered,
-            spacing,
-            backgroundPosition,
-        );
-        setDimensions({
-            width: shapeInfo.width,
-            height: shapeInfo.height,
+        setDoorPosition(curPos => {
+            return { x: curPos.x - x, y: curPos.y - y };
         });
-        setPosition({
-            x: shapeInfo.x,
-            y: shapeInfo.y,
-        });
-        setTransformBarInfo(getTransformBarInfo(pointsOrdered));
-        setCorners(pointsOrdered);
-    }
+    };
 
-    // region getTransformBarInfo
-    function getTransformBarInfo(
-        curCorners?: Array<Vector2> | null,
-    ): Array<TransformBar> {
-        const dimensionsAsCoord = corners
-            ? getShapeInfo(corners, spacing, backgroundPosition)
-            : dimensions;
-        const heightAsUnits = dimensionsAsCoord.height * spacing;
-        const widthAsUnits = dimensionsAsCoord.width * spacing;
-        const { x: curX, y: curY } = curCorners
-            ? curCorners[0]
-            : roundCoordinate(position, backgroundPosition, spacing) ||
-              position;
-        return [
-            {
-                x: curX + widthAsUnits / 2 - widthAsUnits * 0.3,
-                y: curY - halfSpacing,
-                height: spacing,
-                width: widthAsUnits * 0.6,
-            },
-            {
-                x: curX + widthAsUnits + halfSpacing,
-                y: curY + heightAsUnits / 2 - heightAsUnits * 0.3,
-                height: heightAsUnits * 0.6,
-                width: spacing,
-            },
-            {
-                x: curX + widthAsUnits / 2 - widthAsUnits * 0.3,
-                y: curY + heightAsUnits + halfSpacing,
-                height: spacing,
-                width: widthAsUnits * 0.6,
-            },
-            {
-                x: curX - halfSpacing,
-                y: curY + heightAsUnits / 2 - heightAsUnits * 0.3,
-                height: heightAsUnits * 0.6,
-                width: spacing,
-            },
-        ];
-    }
-
-    // endregion
-
-    function setCursorChecked(cursor: string) {
-        if (selectedTool === Tool.Selector && selectedShapeName === name) {
-            setCursor(cursor);
-        }
-    }
-
-    // region pointInside
-    function pointInside(
-        room: RoomType | (Vector2 & Dimension),
-        point: Vector2,
-    ): boolean {
-        let inside = true;
-        if (point.y < room.y) inside = false;
-        if (point.x < room.x) inside = false;
-        if (point.y > room.y + room.height) inside = false;
-        if (point.x > room.x + room.width) inside = false;
-        return inside;
-    }
-
-    // endregion
-
-    function shapeIntersects(shapePosition: Vector2): boolean {
-        const roundedPosition = getRoundedUnit(
-            shapePosition,
-            backgroundPosition,
-            spacing,
-        );
-        const curCorners = getCornersUnits(roundedPosition, dimensions);
-        return roomList.some((room, roomIndex) => {
-            if (roomIndex === index) return false; // doesnt intersect
-            const cornerIntersects = curCorners.some(corner => {
-                return pointInside(room, corner);
-            });
-            return (
-                cornerIntersects ||
-                getCornersUnits(
-                    { x: room.x, y: room.y },
-                    { width: room.width, height: room.height },
-                ).some(corner => {
-                    return pointInside(
-                        { ...roundedPosition, ...dimensions },
-                        corner,
-                    );
-                })
-            );
-        });
-    }
-
-    function onDrag(event: KonvaEventObject<DragEvent>) {
-        const shapePosition = {
-            x: event.target.attrs.x,
-            y: event.target.attrs.y,
-        };
-        const background = group.current?.getStage()?.findOne('.BACKGROUND');
-        if (!background) return;
-        const roundedCoordinate = getRoundedUnit(
-            shapePosition,
-            backgroundPosition,
-            spacing,
-        );
-        const backgroundSize = {
-            height: background.height() / spacing,
-            width: background.width() / spacing,
-        };
-        const containedX =
-            roundedCoordinate.x <= 0
-                ? 0
-                : roundedCoordinate.x >= backgroundSize.width - dimensions.width
-                ? backgroundSize.width - dimensions.width
-                : roundedCoordinate.x;
-        const containedY =
-            roundedCoordinate.y <= 0
-                ? 0
-                : roundedCoordinate.y >=
-                  backgroundSize.height - dimensions.height
-                ? backgroundSize.height - dimensions.height
-                : roundedCoordinate.y;
-        let newPosition = {
-            x: containedX,
-            y: containedY,
-        };
-        if (shapeIntersects(shapePosition)) {
-            newPosition = position;
-        }
-        shape.current?.position({
-            x: backgroundPosition.x + newPosition.x * spacing - spacing,
-            y: backgroundPosition.y + newPosition.y * spacing - spacing,
-        });
-        const newCorners = getCornersCoords(dimensions, newPosition);
-        line.current?.attrs('points', newCorners);
-        setPosition(newPosition);
-        setTransformBarInfo(getTransformBarInfo(newCorners));
-        setCorners(newCorners);
-    }
-
-    function onMouseMove(curMousePosition: Vector2) {
-        const curDoorPosition: Vector2 = { x: 0, y: 0 };
-        const containedX =
-            curMousePosition.x <= position.x - spacing
-                ? position.x - halfSpacing
-                : curMousePosition.x >= position.x + dimensions.width
-                ? position.x + dimensions.width + halfSpacing
-                : curMousePosition.x;
-        if (curMousePosition.y <= position.y) {
-            curDoorPosition.y = position.y - halfSpacing;
-            curDoorPosition.x = containedX;
-        } else if (curMousePosition.y >= position.y + dimensions.height) {
-            curDoorPosition.y = position.y + dimensions.height + halfSpacing;
-            curDoorPosition.x = containedX;
-        } else if (curMousePosition.x <= position.x) {
-            curDoorPosition.x = position.x - halfSpacing;
-            curDoorPosition.y = mousePosition.y;
-        } else if (curMousePosition.x >= position.x + dimensions.width) {
-            curDoorPosition.x = position.x + dimensions.width + halfSpacing;
-            curDoorPosition.y = mousePosition.y;
-        }
-        setDoorPositionState(curDoorPosition);
-    }
-
-    function getDragBounds(draggedPosition: Vector2): Vector2 {
-        if (shapeIntersects(draggedPosition)) {
-            const shapePos = unitToCoordinate(position);
-            shape.current?.position({
-                x: shapePos.x,
-                y: shapePos.y,
-            });
-            return unitToCoordinate(position);
-        }
-        return draggedPosition;
-    }
+    useEventListener('click', onClick);
+    useEventListener('wheel', handleWheel);
+    useEffect(() => onMouseMove(mousePosition), [mousePosition, onMouseMove]);
+    const points = useMemo(() => pointToArray(corners), [corners]);
 
     return (
-        <BuildStageContext.Consumer>
-            {buildStageContext => (
-                <AppInfoContext.Consumer>
-                    {appInfo => {
-                        return (
-                            <Group
-                                name={'this_group'}
-                                ref={group}
-                                onContextMenu={() =>
-                                    appInfo.setContextMenuStatus(Item.room)
-                                }
-                            >
-                                {appInfo.selectedTool === Tool.Selector ? (
-                                    <Line
-                                        name={name}
-                                        ref={line}
-                                        key={`LINE-${name}`}
-                                        points={pointToArray(corners)}
-                                        strokeWidth={spacing}
-                                        closed
-                                        onClick={() => onClick()}
-                                        lineCap={'square'}
-                                        stroke={'black'}
-                                        fill={'white'}
-                                    />
-                                ) : (
-                                    <Group>
-                                        <Rect
-                                            x={
-                                                backgroundPosition.x +
-                                                position.x * spacing -
-                                                spacing * 2
-                                            }
-                                            y={
-                                                backgroundPosition.y +
-                                                position.y * spacing -
-                                                spacing * 2
-                                            }
-                                            height={
-                                                dimensions.height * spacing +
-                                                spacing * 2
-                                            }
-                                            width={
-                                                dimensions.width * spacing +
-                                                spacing * 2
-                                            }
-                                            fill={'black'}
-                                            name={name}
-                                        />
-                                        <Rect
-                                            ref={shape}
-                                            x={
-                                                backgroundPosition.x +
-                                                position.x * spacing -
-                                                spacing
-                                            }
-                                            y={
-                                                backgroundPosition.y +
-                                                position.y * spacing -
-                                                spacing
-                                            }
-                                            draggable
-                                            onClick={() => onClick()}
-                                            onDragMove={e => onDrag(e)}
-                                            dragBoundFunc={pos =>
-                                                getDragBounds(pos)
-                                            }
-                                            height={dimensions.height * spacing}
-                                            width={dimensions.width * spacing}
-                                            fill={'white'}
-                                        />
-                                    </Group>
-                                )}
-                                {corners.map(
-                                    (
-                                        { x: cornerX, y: cornerY },
-                                        cornerIndex,
-                                    ) => (
-                                        <Group
-                                            key={`ANCHOR-${name}-${cornerIndex}`}
-                                            name={`ANCHOR-${name}-${cornerIndex}`}
-                                            x={cornerX - spacing / 2}
-                                            y={cornerY - spacing / 2}
-                                            draggable
-                                            onDragMove={(
-                                                event: KonvaEventObject<FixedDragEvent>,
-                                            ) =>
-                                                cornerResize(index, {
-                                                    x: event.evt.layerX,
-                                                    y: event.evt.layerY,
-                                                })
-                                            }
-                                            onDragEnd={() =>
-                                                updateShape(corners)
-                                            }
-                                            visible={
-                                                appInfo.selectedTool ===
-                                                    Tool.Selector &&
-                                                appInfo.selectedShapeName ===
-                                                    name
-                                            }
-                                            onMouseEnter={() =>
-                                                setCursorChecked(
-                                                    index % 2 === 0
-                                                        ? 'nw-resize'
-                                                        : 'nesw-resize',
-                                                )
-                                            }
-                                            onMouseLeave={() =>
-                                                setCursorChecked('default')
-                                            }
-                                        >
-                                            <Rect
-                                                name={`ANCHOR-${index}-0`}
-                                                fill={'black'}
-                                                height={10}
-                                                width={10}
-                                            />
-                                            <Rect
-                                                x={1}
-                                                y={1}
-                                                fill={'white'}
-                                                height={8}
-                                                width={8}
-                                            />
-                                        </Group>
-                                    ),
-                                )}
-                                {transformBarInfo.map(
-                                    (
-                                        {
-                                            x: transformBarX,
-                                            y: transformBarY,
-                                            height: barHeight,
-                                            width: barWidth,
-                                        },
-                                        barIndex,
-                                    ) =>
-                                        appInfo.selectedTool ===
-                                        Tool.Selector ? (
-                                            <Rect
-                                                x={transformBarX}
-                                                y={transformBarY}
-                                                height={barHeight}
-                                                width={barWidth}
-                                                key={`TRANSFORM-${name}-${barIndex}`}
-                                                draggable
-                                                dragBoundFunc={pos => {
-                                                    return {
-                                                        x:
-                                                            barIndex % 2 === 0
-                                                                ? transformBarX
-                                                                : pos.x,
-                                                        y:
-                                                            barIndex % 2 === 0
-                                                                ? pos.y
-                                                                : transformBarY,
-                                                    };
-                                                }}
-                                                onMouseEnter={() =>
-                                                    setCursorChecked(
-                                                        barIndex % 2 === 0
-                                                            ? 'n-resize'
-                                                            : 'e-resize',
-                                                    )
-                                                }
-                                                onMouseLeave={() =>
-                                                    setCursorChecked('default')
-                                                }
-                                                onDragMove={(
-                                                    event: KonvaEventObject<FixedDragEvent>,
-                                                ) => {
-                                                    if (
-                                                        appInfo.selectedTool !==
-                                                            Tool.Selector ||
-                                                        appInfo.selectedShapeName !==
-                                                            name
-                                                    )
-                                                        return;
-                                                    sideResize(barIndex, event);
-                                                }}
-                                            />
-                                        ) : null,
-                                )}
-                                {doorPositionState ? (
-                                    <Rect
-                                        name={`DOOR-${name}`}
-                                        x={doorPositionState.x - halfSpacing}
-                                        y={doorPositionState.y - halfSpacing}
-                                        fill={'white'}
-                                        width={spacing}
-                                        height={spacing}
-                                    />
-                                ) : null}
-                            </Group>
-                        );
-                    }}
-                </AppInfoContext.Consumer>
+        <AppInfoContext.Consumer>
+            {appInfo => (
+                <>
+                    {appInfo.selectedTool === Tool.Selector && appInfo.selectedRoomName === name ? (
+                        <Group ref={lineGroup}>
+                            <Line name={'LINE'} points={points} strokeWidth={spacing} closed lineCap={'square'} stroke={'black'} fill={'white'} />
+                            {corners.map((corner, cornerIndex) => (
+                                <AnchorPoint
+                                    key={`ANCHOR-${cornerIndex}`}
+                                    index={cornerIndex}
+                                    name={`ANCHOR-${cornerIndex}`}
+                                    x={corner.x - spacing / 2}
+                                    y={corner.y - spacing / 2}
+                                    onDragMove={e => onCornerDrag(e, cornerIndex)}
+                                    onDragEnd={() => updateShape()}
+                                />
+                            ))}
+                        </Group>
+                    ) : (
+                        <Group
+                            ref={group}
+                            onContextMenu={() => {
+                                appInfo.setSelectedRoomName(name);
+                                appInfo.setContextMenuStatus(Item.room);
+                            }}
+                        >
+                            <Rect
+                                name={`${name}-Stroke`}
+                                height={height + appInfo.spacing * 2}
+                                width={width + appInfo.spacing * 2}
+                                x={backgroundPosition.x + x - appInfo.spacing}
+                                y={backgroundPosition.y + y - appInfo.spacing}
+                                fill={'black'}
+                            />
+                            <Rect
+                                name={`${name}-Fill`}
+                                ref={shape}
+                                x={backgroundPosition.x + x}
+                                y={backgroundPosition.y + y}
+                                draggable
+                                onDragMove={onDrag}
+                                onClick={() => appInfo.setSelectedRoomName(name)}
+                                height={height}
+                                width={width}
+                                fill={'white'}
+                            />
+                            {appInfo.selectedSubTool === SubTool.AddDoor && appInfo.selectedRoomName === name ? (
+                                <Rect
+                                    fill={'white'}
+                                    x={appInfo.selectedSubTool === SubTool.AddDoor ? doorPosition?.x : doorPosition.x + x}
+                                    y={appInfo.selectedSubTool === SubTool.AddDoor ? doorPosition?.y : doorPosition.y + y}
+                                    height={doorRotation === 'ver' ? spacing * doorSize : spacing}
+                                    width={doorRotation === 'hor' ? spacing * doorSize : spacing}
+                                    strokeWidth={1}
+                                    stroke={'black'}
+                                    dash={[1, 1]}
+                                />
+                            ) : null}
+                        </Group>
+                    )}
+                </>
             )}
-        </BuildStageContext.Consumer>
+        </AppInfoContext.Consumer>
     );
 };
 

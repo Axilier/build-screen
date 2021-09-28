@@ -1,0 +1,18 @@
+.buildStage {
+    display: flex;
+    flex-direction: column;
+    flex: 1 auto;
+}
+.konvaCanvas {
+    flex: 1 0 auto;
+    background-color: #e4e4e4;
+}
+.bottomInfobar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 30px;
+    background-color: #fafafa;
+}

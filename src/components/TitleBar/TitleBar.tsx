@@ -1,20 +1,41 @@
 import * as React from 'react';
-import '../../css/TitleBar.css'
-import TitleBarTile, {BasicProps, TitleBarTileType} from "./TitleBarTile";
+import { createContext } from 'react';
+import styles from '../../css/TitleBar.module.css';
+import { BasicProps } from '../../Types';
 
 interface TitleBarProps {
-    TileList: Array<TitleBarTileType>
+    children: React.ReactNode;
 }
 
-export const TitleBar = ({TileList, backgroundColor, color, hoveredColor, menuTileTextColor, menuTileHoverColor}: TitleBarProps & BasicProps) => {
+export const TitleBarContext = createContext({
+    backgroundColor: '',
+    color: '',
+    hoveredColor: '',
+    menuTileTextColor: '',
+    menuTileHoverColor: '',
+});
+
+const TitleBar = ({
+    children,
+    backgroundColor,
+    color,
+    hoveredColor,
+    menuTileTextColor,
+    menuTileHoverColor,
+}: TitleBarProps & BasicProps): JSX.Element => {
     return (
-        <div className={"titlebar"}>
-            {TileList.map(({name, menuLayout}: TitleBarTileType, index: number) => (
-                <TitleBarTile key={"title-tile" + index} name={name} backgroundColor={backgroundColor} hoveredColor={hoveredColor} color={color}
-                              menuLayout={menuLayout} menuTileTextColor={menuTileTextColor} menuTileHoverColor={menuTileHoverColor}/>
-            ))}
-        </div>
-    )
-}
+        <TitleBarContext.Provider
+            value={{
+                backgroundColor,
+                color,
+                hoveredColor,
+                menuTileHoverColor: menuTileHoverColor || '',
+                menuTileTextColor: menuTileTextColor || '',
+            }}
+        >
+            <div className={styles.titlebar}>{children}</div>
+        </TitleBarContext.Provider>
+    );
+};
 
 export default TitleBar;

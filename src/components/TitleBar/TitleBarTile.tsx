@@ -1,40 +1,42 @@
 import * as React from 'react';
-import {useState} from 'react';
-import Menu from "./Menu";
-import {MenuTileType} from "./MenuTile";
-
-export interface BasicProps {
-    backgroundColor: string,
-    hoveredColor: string
-    color: string
-    menuTileTextColor?: string
-    menuTileHoverColor?: string
-}
+import { useContext, useRef, useState } from 'react';
+import { useClickOutside } from 'core';
+import styles from '../../css/TitleBar.module.css';
+import { TitleBarContext } from './TitleBar';
+import Menu from './Menu';
 
 export interface TitleBarTileType {
-    name: string,
-    menuLayout: Array<MenuTileType>
+    name: string;
+    children: React.ReactNode;
 }
 
-export const TitleBarTile = ({name, backgroundColor, hoveredColor, color, menuLayout, menuTileTextColor, menuTileHoverColor}: TitleBarTileType & BasicProps) => {
-    const [menuOpen, setMenuStatus] = useState(false)
-    const [hovered, setHovered] = useState(false)
+export const TitleBarTile = ({ name, children }: TitleBarTileType): JSX.Element => {
+    const { color, backgroundColor, hoveredColor } = useContext(TitleBarContext);
+    const [menuOpen, setMenuStatus] = useState(false);
+    const [hovered, setHovered] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
 
-    window.addEventListener("click", (event: MouseEvent) => {
-        // @ts-ignore
-        if (event.target.className === "titlebar-tile" && event.target.id === `titlebar-tile-${name}`) return
-        setMenuStatus(false)
-    })
+    useClickOutside(() => setMenuStatus(false), ref);
 
     return (
-        <div onClick={() => setMenuStatus(!menuOpen)} onMouseEnter={() => setHovered(true)} onMouseLeave={() => {
-            setHovered(false)
-        }} className={"titlebar-tile"} id={`titlebar-tile-${name}`}
-             style={{color, backgroundColor: (hovered) ? hoveredColor : backgroundColor}}>
+        <div
+            ref={ref}
+            role={'button'}
+            onClick={() => setMenuStatus(!menuOpen)}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => {
+                setHovered(false);
+            }}
+            className={styles.tile}
+            style={{
+                color,
+                backgroundColor: hovered ? hoveredColor : backgroundColor,
+            }}
+        >
             {name}
-            <Menu open={menuOpen} menuTiles={menuLayout} color={menuTileTextColor || color} tileHoverColor={menuTileHoverColor}/>
+            <Menu open={menuOpen}>{children}</Menu>
         </div>
-    )
+    );
 };
 
 export default TitleBarTile;
