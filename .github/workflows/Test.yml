@@ -12,10 +12,12 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: 'dev'
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_P_KEY }}
       - name: setup node
         uses: actions/setup-node@v2-beta
         with:
           node-version: '12'
       - name: install deps and build
-        run: |
-          yarn install
+        run: yarn install
