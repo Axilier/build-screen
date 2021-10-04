@@ -15,19 +15,20 @@ import TitleBarTile from './components/TitleBar/TitleBarTile';
 import useEventListener from './components/useEventListener';
 
 interface Props {
+    map: Array<RoomType>;
     fileSaved: boolean;
     fileSaving: boolean;
     onMapChange: (map: Array<RoomType>) => void;
     saveRequested?: (map: Array<RoomType>) => void;
 }
 
-const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested }: Props): JSX.Element => {
+const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map }: Props): JSX.Element => {
     const [selectedTool, setSelectedTool] = useState<Tool>(Tool.Cursor);
     const [selectedSubTool, setSelectedSubTool] = useState<SubTool>(SubTool.null);
     const [cursor, setCursor] = useState<string>('default');
     const [contextMenuStatus, setContextMenuStatus] = useState<Item | 'closed'>('closed');
     const [selectedShapeName, setSelectedShapeName] = useState<string | null>(null);
-    const [roomList, setRoomList] = useState<Array<RoomType>>([]);
+    const [roomList, setRoomList] = useState<Array<RoomType>>(map);
 
     const [propertiesWindowStatus, setPropertiesWindowStatus] = useState(false);
 
