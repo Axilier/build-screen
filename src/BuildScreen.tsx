@@ -146,3 +146,4 @@ const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested }: Prop
 };
 
 export default BuildScreen;
+export { RoomType, Vector2 } from './Types';
