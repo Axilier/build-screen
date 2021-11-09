@@ -12,7 +12,10 @@ interface ShapeInfo {
 }
 
 export const PropertiesSidebar = ({ open }: { open: boolean }) => {
-    const { selectedRoomName, roomList, setRoomList, selectedSubTool } = useContext(AppInfoContext);
+    const {
+        selectedRoomName,
+        map: { rooms },
+    } = useContext(AppInfoContext);
 
     const [shapeInfo, setShapeInfo] = useState<ShapeInfo>({
         width: '--',
@@ -26,7 +29,7 @@ export const PropertiesSidebar = ({ open }: { open: boolean }) => {
     const menusDisabled = selectedRoomName === null;
 
     useEffect(() => {
-        const { width, height, x, y } = roomList.find(value => value.name === selectedRoomName) || {
+        const { width, height, x, y } = rooms.find(value => value.name === selectedRoomName) || {
             width: '--',
             height: '--',
             x: '--',
@@ -38,7 +41,7 @@ export const PropertiesSidebar = ({ open }: { open: boolean }) => {
             x,
             y,
         });
-    }, [roomList, selectedRoomName]);
+    }, [rooms, selectedRoomName]);
     // useEffect(() => {
     //     switch (selectedSubTool) {
     //         case SubTool.AddDoor:
@@ -108,9 +111,9 @@ export const PropertiesSidebar = ({ open }: { open: boolean }) => {
                 return <div>rooms</div>;
             case 0:
             default:
-                return roomList.length !== 0 ? (
+                return rooms.length !== 0 ? (
                     <List>
-                        {roomList.map(room => (
+                        {rooms.map(room => (
                             <ListItem key={room.name}>{room.name}</ListItem>
                         ))}
                     </List>
@@ -118,7 +121,7 @@ export const PropertiesSidebar = ({ open }: { open: boolean }) => {
                     <h3 style={{ textAlign: 'center', marginTop: '10px' }}>No objects created yet</h3>
                 );
         }
-    }, [roomList, selectedTabBottom]);
+    }, [rooms, selectedTabBottom]);
 
     return (
         <div className={styles.main} style={{ width: 500, display: open ? 'block' : 'none' }}>

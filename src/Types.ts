@@ -1,3 +1,5 @@
+import { Coords } from 'google-map-react';
+
 export type FixedMouseEvent = {
     layerX: number;
     layerY: number;
@@ -40,9 +42,7 @@ export enum Tool {
     Cursor,
     Selector,
     Add,
-    drawShape,
-    Text,
-    delete,
+    Position,
 }
 
 export enum SubTool {
@@ -69,6 +69,14 @@ export interface ShapeInfo {
     height: number;
     x: number;
     y: number;
+}
+
+export interface Map {
+    position: Coords;
+    scalePointPosition: Coords;
+    rotation: number;
+    scale: Vector2;
+    rooms: Array<RoomType>;
 }
 
 export interface RoomType {

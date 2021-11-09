@@ -20,7 +20,7 @@ const Room = ({
     const group = useRef<Konva.Group>(null);
     const lineGroup = useRef<Konva.Group>(null);
     const shape = useRef<Konva.Rect>(null);
-    const { spacing, roomList, setRoomList, selectedRoomName, selectedSubTool, setSelectedSubTool } = useContext(AppInfoContext);
+    const { spacing, map, setMap, selectedRoomName, selectedSubTool, setSelectedSubTool } = useContext(AppInfoContext);
     const { backgroundPosition, backgroundSize, mousePosition } = useContext(BuildStageContext);
     const calculateCorners = useCallback(
         (curX: number, curY: number, curHeight: number, curWidth: number, curBackgroundPosition: Vector2) => [
@@ -66,7 +66,7 @@ const Room = ({
         setY(shapeInfo.y);
         setHeight(shapeInfo.height);
         setWidth(shapeInfo.width);
-        const tempRoomList = [...roomList];
+        const tempRoomList = [...map.rooms];
         tempRoomList[index] = {
             x: shapeInfo.x / spacing,
             y: shapeInfo.y / spacing,
@@ -74,7 +74,10 @@ const Room = ({
             width: shapeInfo.width / spacing,
             name,
         };
-        setRoomList([...tempRoomList]);
+        setMap({
+            ...map,
+            rooms: [...tempRoomList],
+        });
     };
 
     const onDrag = (event: KonvaEventObject<DragEvent>) => {
@@ -91,7 +94,7 @@ const Room = ({
             x: contain(width, backgroundSize.width, 'x'),
             y: contain(height, backgroundSize.height, 'y'),
         };
-        const intersects = roomList.some((room, roomIndex) => {
+        const intersects = map.rooms.some((room, roomIndex) => {
             return roomIndex === index
                 ? false
                 : haveIntersection(room, { x: contained.x / spacing, y: contained.y / spacing, height: height / spacing, width: width / spacing });
@@ -104,8 +107,9 @@ const Room = ({
             setX(contained.x);
             setY(contained.y);
             setCorners([...calculateCorners(contained.x, contained.y, height, width, backgroundPosition)]);
-            setRoomList(
-                roomList.map((room, roomIndex) =>
+            setMap({
+                ...map,
+                rooms: map.rooms.map((room, roomIndex) =>
                     roomIndex === index
                         ? {
                               ...room,
@@ -114,7 +118,7 @@ const Room = ({
                           }
                         : room,
                 ),
-            );
+            });
         } else {
             shape.current?.position({
                 x: x + backgroundPosition.x,
@@ -153,7 +157,7 @@ const Room = ({
         });
         const orderedCorners = reOrderPoints(tempCorners);
         const shapeInfo = getShapeInfo(orderedCorners, spacing, backgroundPosition);
-        const intersects = roomList.some((room, roomIndex) => {
+        const intersects = map.rooms.some((room, roomIndex) => {
             return roomIndex === index
                 ? false
                 : haveIntersection(room, {
@@ -271,8 +275,9 @@ const Room = ({
     const onClick = () => {
         if (selectedRoomName !== name || selectedSubTool !== SubTool.AddDoor) return;
         setSelectedSubTool(SubTool.null);
-        setRoomList(
-            roomList.map((room, roomIndex) =>
+        setMap({
+            ...map,
+            rooms: map.rooms.map((room, roomIndex) =>
                 roomIndex === index
                     ? {
                           ...room,
@@ -282,7 +287,7 @@ const Room = ({
                       }
                     : room,
             ),
-        );
+        });
         setDoorPosition(curPos => {
             return { x: curPos.x - x, y: curPos.y - y };
         });
@@ -327,17 +332,22 @@ const Room = ({
                                 x={backgroundPosition.x + x - appInfo.spacing}
                                 y={backgroundPosition.y + y - appInfo.spacing}
                                 fill={'black'}
+                                opacity={0.1}
                             />
                             <Rect
                                 name={`${name}-Fill`}
                                 ref={shape}
                                 x={backgroundPosition.x + x}
                                 y={backgroundPosition.y + y}
-                                draggable
-                                onDragMove={onDrag}
+                                draggable={appInfo.selectedTool !== Tool.Position}
+                                onDragMove={e => {
+                                    if (appInfo.selectedTool === Tool.Position) return;
+                                    onDrag(e);
+                                }}
                                 onClick={() => appInfo.setSelectedRoomName(name)}
                                 height={height}
                                 width={width}
+                                opacity={0.3}
                                 fill={'white'}
                             />
                             {appInfo.selectedSubTool === SubTool.AddDoor && appInfo.selectedRoomName === name ? (

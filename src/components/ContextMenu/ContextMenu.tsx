@@ -1,11 +1,17 @@
 import * as React from 'react';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { Menu, MenuTile } from '../TitleBar';
 import { FixedMouseEvent, Item, SubTool, Vector2 } from '../../Types';
 import { AppInfoContext } from '../../Context';
 
 const ContextMenu = (): JSX.Element => {
-    const { setSelectedSubTool, setContextMenuStatus, roomList, setRoomList, selectedRoomName } = useContext(AppInfoContext);
+    const {
+        setSelectedSubTool,
+        setContextMenuStatus,
+        map: { rooms, ...map },
+        setMap,
+        selectedRoomName,
+    } = useContext(AppInfoContext);
     const [clickedPosition, setClickedPosition] = useState<Vector2>({ x: 0, y: 0 });
 
     useEffect(() => {
@@ -33,10 +39,13 @@ const ContextMenu = (): JSX.Element => {
     };
 
     const bringToFront = () => {
-        if (roomList.length === 1) return;
-        const selectedRoomIndex = roomList.findIndex(room => room.name === selectedRoomName);
-        const tempRoomList = roomList.splice(selectedRoomIndex, 1);
-        setRoomList([roomList[selectedRoomIndex], ...tempRoomList]);
+        if (rooms.length === 1) return;
+        const selectedRoomIndex = rooms.findIndex(room => room.name === selectedRoomName);
+        const tempRoomList = rooms.splice(selectedRoomIndex, 1);
+        setMap({
+            ...map,
+            rooms: [rooms[selectedRoomIndex], ...tempRoomList],
+        });
     };
 
     return (

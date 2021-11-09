@@ -1,5 +1,5 @@
 import { createContext, Dispatch, SetStateAction } from 'react';
-import { Dimension, Item, RoomType, SubTool, Tool, Vector2 } from './Types';
+import { Dimension, Item, Map, SubTool, Tool, Vector2 } from './Types';
 
 interface SelectedShapeNameType {
     mousePosition: Vector2;
@@ -10,8 +10,10 @@ interface SelectedShapeNameType {
 
 interface AppInfo {
     spacing: number;
-    roomList: Array<RoomType>;
-    setRoomList: Dispatch<SetStateAction<Array<RoomType>>> | (() => void);
+    mapInfo: Record<string, string>;
+    setMapInfo: Dispatch<SetStateAction<Array<Record<string, string>>>> | (() => void);
+    map: Map;
+    setMap: Dispatch<SetStateAction<Map>> | (() => void);
     contextMenuStatus: Item | 'closed';
     setContextMenuStatus: Dispatch<SetStateAction<Item | 'closed'>> | (() => void);
     selectedTool: Tool;
@@ -25,8 +27,16 @@ interface AppInfo {
 
 export const AppInfoContext = createContext<AppInfo>({
     spacing: 10,
-    roomList: [],
-    setRoomList: () => null,
+    mapInfo: {},
+    setMapInfo: () => null,
+    map: {
+        position: { lat: 1, lng: 1 },
+        scalePointPosition: { lat: 1, lng: 1 },
+        rooms: [],
+        scale: { x: 1, y: 1 },
+        rotation: 0,
+    },
+    setMap: () => null,
     contextMenuStatus: 'closed',
     setContextMenuStatus: () => null,
     selectedTool: Tool.Cursor,
