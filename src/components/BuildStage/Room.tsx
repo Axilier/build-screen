@@ -332,7 +332,6 @@ const Room = ({
                                 x={backgroundPosition.x + x - appInfo.spacing}
                                 y={backgroundPosition.y + y - appInfo.spacing}
                                 fill={'black'}
-                                opacity={0.1}
                             />
                             <Rect
                                 name={`${name}-Fill`}
@@ -347,7 +346,6 @@ const Room = ({
                                 onClick={() => appInfo.setSelectedRoomName(name)}
                                 height={height}
                                 width={width}
-                                opacity={0.3}
                                 fill={'white'}
                             />
                             {appInfo.selectedSubTool === SubTool.AddDoor && appInfo.selectedRoomName === name ? (
