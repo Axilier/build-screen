@@ -15,6 +15,7 @@ import TitleBarTile from './components/TitleBar/TitleBarTile';
 import useEventListener from './components/useEventListener';
 
 interface Props {
+    googleApiKey: string;
     map: Map;
     fileSaved: boolean;
     fileSaving: boolean;
@@ -22,7 +23,7 @@ interface Props {
     saveRequested?: (map: Map) => void;
 }
 
-const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map }: Props): JSX.Element => {
+const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map, googleApiKey }: Props): JSX.Element => {
     const [selectedTool, setSelectedTool] = useState<Tool>(Tool.Cursor);
     const [selectedSubTool, setSelectedSubTool] = useState<SubTool>(SubTool.null);
     const [cursor, setCursor] = useState<string>('default');
@@ -155,7 +156,7 @@ const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map }:
                             />
                         </div>
                     </div>
-                    <BuildStage propertiesWindow={propertiesWindowStatus} />
+                    <BuildStage googleApiKey={googleApiKey} propertiesWindow={propertiesWindowStatus} />
                     <PropertiesSidebar open={propertiesWindowStatus} />
                 </Layout>
             </Layout>
