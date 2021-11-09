@@ -1,8 +1,10 @@
 import Konva from 'konva';
-import * as React from 'react';
-import { useContext, useEffect, useRef, useState } from 'react';
-import { Layer, Line, Rect, Stage } from 'react-konva';
+import { Button } from 'core';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Group, Layer, Line, Rect, Stage, Transformer } from 'react-konva';
+import GoogleMapReact, { Coords } from 'google-map-react';
 import styles from '../../css/BuildStage.module.css';
+import useEventListener from '../useEventListener';
 import Room from './Room';
 import Background from './Background';
 import { FixedMouseEvent, SubTool, Tool, Vector2 } from '../../Types';
@@ -11,42 +13,136 @@ import KonvaEventObject = Konva.KonvaEventObject;
 
 export const BuildStage = ({ propertiesWindow }: { propertiesWindow: boolean }): JSX.Element => {
     const backgroundSize = { height: 600, width: 950 };
-    const { selectedTool, cursor, spacing, setRoomList, roomList, selectedSubTool, selectedRoomName } = useContext(AppInfoContext);
+
+    const { selectedTool, cursor, spacing, map, setMap, selectedSubTool, selectedRoomName } = useContext(AppInfoContext);
     const stage = useRef<Konva.Stage>(null);
+    const roomGroupRef = useRef<Konva.Group>(null);
+    const ref = useRef<GoogleMapReact>(null);
+    const transformerRef = useRef<Konva.Transformer>(null);
+
+    const [mapRotation, setMapRotation] = useState(0);
+    const [mapScale, setMapScale] = useState({ x: 1, y: 1 });
+    const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 });
+    const [mapSelected, setMapSelected] = useState(false);
+    const [googleInfo, setGoogleInfo] = useState({ lat: 51.5072, lng: 0.1276, zoom: 10 });
     const [dimensions, setDimensions] = useState([window.innerWidth - (propertiesWindow ? 580 : 80), window.innerHeight - 100]);
     const [backgroundPosition, setBackgroundPosition] = useState({
         x: dimensions[0] / 2 - backgroundSize.width / 2,
         y: dimensions[1] / 2 - backgroundSize.height / 2,
     });
+    const [showMap, setShowMap] = useState(true);
     const [stageInfo, setStageInfo] = useState({
         stageScale: 1,
         stageX: 0,
         stageY: 0,
     });
-
     const [mousePressed, setMousePressed] = useState(false); // DOC is the mouse currently pressed
     const [mousePressedPosition, setMousePressedPosition] = useState<Vector2>(); // DOC the initial position the mouse was pressed for dragging
     const [mousePosition, setMousePosition] = useState<Vector2>({ x: 0, y: 0 }); // DOC the current position of the cursor
     const [selectionRegionPoints, setSelectionRegionPoints] = useState<Array<number>>();
     const [selectionRegionStatus, setSelectionRegionStatus] = useState(false); // true -- shown, false -- hidden
 
+    const newDimensions = useCallback(() => setDimensions([window.innerWidth - (propertiesWindow ? 580 : 80), window.innerHeight - 100]), [
+        propertiesWindow,
+    ]);
+
     useEffect(() => {
-        window.addEventListener('resize', () => newDimensions());
-    }, []);
-    useEffect(() => setDimensions([window.innerWidth - (propertiesWindow ? 580 : 80), window.innerHeight - 100]), [propertiesWindow]);
+        navigator.geolocation.getCurrentPosition(
+            position =>
+                setGoogleInfo({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                    zoom: googleInfo.zoom,
+                }),
+            () => setGoogleInfo({ lat: 51.5072, lng: 0.1276, zoom: googleInfo.zoom }),
+        );
+    });
+    useEffect(() => newDimensions(), [newDimensions]);
     useEffect(() => {
         if (selectedSubTool === SubTool.AddDoor) {
-            if (roomList.length === 1) return;
-            const selectedRoomIndex = roomList.findIndex(room => room.name === selectedRoomName);
-            const tempRoomList = roomList.splice(selectedRoomIndex, 1);
-            setRoomList([roomList[selectedRoomIndex], ...tempRoomList]);
+            if (map.rooms.length === 1) return;
+            const selectedRoomIndex = map.rooms.findIndex(room => room.name === selectedRoomName);
+            const tempRoomList = map.rooms.splice(selectedRoomIndex, 1);
+            setMap({
+                ...map,
+                rooms: [map.rooms[selectedRoomIndex], ...tempRoomList],
+            });
         }
-    }, [roomList, selectedRoomName, selectedSubTool, setRoomList]);
+    }, [map, selectedRoomName, selectedSubTool, setMap]);
+    useEffect(() => {
+        if (!roomGroupRef?.current) return;
+        if (selectedTool !== Tool.Position) {
+            roomGroupRef?.current.position({ x: 0, y: 0 });
+            return;
+        }
+        roomGroupRef?.current.position(mapPosition);
+    }, [mapPosition, selectedTool]);
+    useEffect(() => {
+        if (selectedTool !== Tool.Position) {
+            setMapSelected(false);
+        }
+    }, [selectedTool]);
+    useEventListener('resize', newDimensions);
+    useEffect(() => {
+        if (!mapSelected || !transformerRef.current || !transformerRef.current.getLayer() || !roomGroupRef.current) return;
+        transformerRef.current.nodes([roomGroupRef.current]);
+        const layer = transformerRef.current.getLayer();
+        if (!layer) return;
+        layer.batchDraw();
+    }, [mapSelected]);
+    const getWorldPosition = useCallback(
+        (point: Vector2): Coords | void => {
+            if (!ref.current || !stage?.current) return;
 
-    const newDimensions = () => setDimensions([window.innerWidth - 580, window.innerHeight - 100]);
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            const { map_: curMap } = ref.current;
+            if (!curMap) return;
+
+            const topRight = curMap.getProjection().fromLatLngToPoint(curMap.getBounds().getNorthEast());
+            const bottomLeft = curMap.getProjection().fromLatLngToPoint(curMap.getBounds().getSouthWest());
+            const scale = 2 ** curMap.getZoom();
+
+            const coordPoint = new google.maps.Point(
+                (point.x + stageInfo.stageX) / scale + bottomLeft.x,
+                (point.y + stageInfo.stageY) / scale + topRight.y,
+            );
+            const projection = curMap.getProjection().fromPointToLatLng(coordPoint);
+            // eslint-disable-next-line consistent-return
+            return { lat: projection.lat(), lng: projection.lng() };
+        },
+        [stageInfo.stageX, stageInfo.stageY],
+    );
+    useEffect(() => {
+        if (selectedTool !== Tool.Position || !stage.current) return;
+        const room = stage.current.find(`.${map.rooms[0].name}-Fill`);
+        if (!room || room.length === 0) return;
+        const mapPos = room[0].absolutePosition();
+        const projection = getWorldPosition({ x: mapPos.x, y: mapPos.y });
+        const fixedRotation = mapRotation < 0 ? mapRotation + 360 : mapRotation;
+        const secondProjection = getWorldPosition({
+            x: room[0].width() * mapScale.x * Math.cos(fixedRotation * (Math.PI / 180)) + mapPos.x,
+            y: room[0].width() * mapScale.x * Math.sin(fixedRotation * (Math.PI / 180)) + mapPos.y,
+        });
+        // TODO get another corner for the room , I think its deffo needed for scaling
+        if (!projection || !secondProjection) return;
+        setMap({
+            position: {
+                lat: projection.lat,
+                lng: projection.lng,
+            },
+            scalePointPosition: {
+                lat: secondProjection.lat,
+                lng: secondProjection.lng,
+            },
+            rotation: mapRotation,
+            scale: mapScale,
+            rooms: map.rooms,
+        });
+    }, [getWorldPosition, map.rooms, mapScale, selectedTool, setMap, mapPosition, mapRotation]);
 
     const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
-        if (selectedSubTool === SubTool.AddDoor) return;
+        if (selectedSubTool === SubTool.AddDoor || selectedTool === Tool.Position) return;
         if (e.evt.shiftKey) {
             const newPosition = e.evt.deltaY > 0 ? stageInfo.stageX + 30 : stageInfo.stageX - 30;
             setStageInfo({
@@ -93,14 +189,7 @@ export const BuildStage = ({ propertiesWindow }: { propertiesWindow: boolean }):
         //             });
         //         } else
     };
-
-    // function partsFromName(name: string): { partType: string, shapeType: ShapeType, index.ts: number } {
-    //     const parts = name.split("-")
-    //     return {partType: parts[0], shapeType: parseInt(parts[1]) as ShapeType, index.ts: parseInt(parts[2])}
-    // }
-
     const onMouseDown = (event: KonvaEventObject<FixedMouseEvent>) => {
-        // console.log(stage.current?.getIntersection({ x: event.evt.layerX, y: event.evt.layerY }));
         const { name } = event.currentTarget.attrs;
         if (name.includes('BACKGROUND') || name.includes('STAGE')) {
             switch (selectedTool) {
@@ -116,25 +205,10 @@ export const BuildStage = ({ propertiesWindow }: { propertiesWindow: boolean }):
                     break;
             }
         }
-        // else if (name.includes('SHAPE')) {
-        //     const parts = partsFromName(name);
-        //     switch (selectedTool) {
-        //         case Tool.Selector: {
-        //             const shapePoints = stage?.current!.find(`.${name}`)[0]
-        //                 .attrs.points;
-        //             const anchorPoints: Array<Vector2> = [];
-        //             shapePoints.forEach((point: number, index.ts: number) => {
-        //                 if (index.ts % 2 === 0) {
-        //                     anchorPoints.push({ x: point, y: 0 });
-        //                 } else {
-        //                     anchorPoints[anchorPoints.length - 1].y = point;
-        //                 }
-        //             });
-        //         }
-        //     }
-        // }
+        if (event.target === event.target.getStage() && selectedTool === Tool.Position) {
+            setMapSelected(false);
+        }
     };
-
     const onMouseUp = () => {
         setMousePressed(false);
         setSelectionRegionStatus(false);
@@ -154,20 +228,22 @@ export const BuildStage = ({ propertiesWindow }: { propertiesWindow: boolean }):
                 x: Math.round((topLeftPosition.x - backgroundPosition.x) / spacing) + 1,
                 y: Math.round((topLeftPosition.y - backgroundPosition.y) / spacing) + 1,
             };
-            setRoomList([
-                ...roomList,
-                {
-                    name: `Room-${roomList.length + 1}`,
-                    doorPosition: null,
-                    ...position,
-                    height,
-                    width,
-                },
-            ]);
+            setMap({
+                ...map,
+                rooms: [
+                    ...map.rooms,
+                    {
+                        name: `Room-${map.rooms.length + 1}`,
+                        doorPosition: null,
+                        ...position,
+                        height,
+                        width,
+                    },
+                ],
+            });
         }
         setMousePressedPosition(undefined);
     };
-
     const updateSelectionBox = () => {
         if (mousePressed && mousePressedPosition && mousePosition) {
             setSelectionRegionStatus(true);
@@ -183,7 +259,6 @@ export const BuildStage = ({ propertiesWindow }: { propertiesWindow: boolean }):
             ]);
         }
     };
-
     const onMouseMove = (event: KonvaEventObject<FixedMouseEvent>) => {
         setMousePosition({
             x: event.evt.layerX - stageInfo.stageX,
@@ -204,7 +279,27 @@ export const BuildStage = ({ propertiesWindow }: { propertiesWindow: boolean }):
         <AppInfoContext.Consumer key={'this-is-very-unique'}>
             {appInfo => (
                 <div key={'buildStage'} className={styles.buildStage}>
-                    <div key={'test1'} className={styles.konvaCanvas} style={{ cursor }}>
+                    {appInfo.selectedTool === Tool.Position && (
+                        <div style={{ width: dimensions[0], height: dimensions[1], position: 'absolute' }}>
+                            <Button className={styles.placeMapButton} onClick={() => setShowMap(!showMap)}>
+                                {showMap ? 'Move Map Position' : 'Edit Map Positioning'}
+                            </Button>
+                            <GoogleMapReact
+                                ref={ref}
+                                options={{ fullscreenControl: false }}
+                                yesIWantToUseGoogleMapApiInternals
+                                defaultCenter={{ lat: googleInfo.lat, lng: googleInfo.lng }}
+                                onDragEnd={e => setGoogleInfo({ lat: e.center.lat(), lng: e.center.lng(), zoom: e.zoom })}
+                                onZoomAnimationEnd={e => setGoogleInfo({ ...googleInfo, zoom: e })}
+                                defaultZoom={googleInfo.zoom}
+                                bootstrapURLKeys={{ key: 'AIzaSyBiAeUMqAzN5h4Z6DCkuVHsl8oe4GY4ukU' }}
+                            />
+                        </div>
+                    )}
+                    <div
+                        className={styles.konvaCanvas}
+                        style={{ cursor, pointerEvents: appInfo.selectedTool === Tool.Position && !showMap ? 'none' : 'auto' }}
+                    >
                         <Stage
                             key={'STAGE'}
                             name={'STAGE'}
@@ -230,53 +325,90 @@ export const BuildStage = ({ propertiesWindow }: { propertiesWindow: boolean }):
                                     }}
                                 >
                                     <Layer>
-                                        <Background
-                                            height={backgroundSize.height}
-                                            width={backgroundSize.width}
-                                            // onMouseDown={(event: KonvaEventObject<FixedMouseEvent>) => onMouseDown(event)}
-                                            onMouseMove={() => null}
-                                            onMouseUp={() => null}
-                                            screenWidth={dimensions[0]}
-                                            screenHeight={dimensions[1]}
-                                        />
+                                        {appInfo.selectedTool !== Tool.Position && (
+                                            <Background
+                                                height={backgroundSize.height}
+                                                width={backgroundSize.width}
+                                                onMouseMove={() => null}
+                                                onMouseUp={() => null}
+                                                screenWidth={dimensions[0]}
+                                                screenHeight={dimensions[1]}
+                                            />
+                                        )}
                                     </Layer>
                                     <Layer>
-                                        {appInfo.roomList.map((room, index) => {
-                                            return (
-                                                <Room
-                                                    key={room.name}
-                                                    index={index}
-                                                    name={room.name}
-                                                    x={room.x}
-                                                    y={room.y}
-                                                    width={room.width}
-                                                    height={room.height}
-                                                    doorPosition={room.doorPosition}
-                                                />
-                                            );
-                                        })}
-                                        {appInfo.roomList.flatMap(room => {
-                                            if (
-                                                !room.doorPosition ||
-                                                !room.doorRotation ||
-                                                !room.doorSize ||
-                                                (appInfo.selectedSubTool === SubTool.AddDoor && appInfo.selectedRoomName === room.name)
-                                            )
-                                                return null;
-                                            return (
-                                                <Rect
-                                                    key={`DOOR-${room.name}`}
-                                                    fill={'white'}
-                                                    x={room.x * spacing + room.doorPosition.x}
-                                                    y={room.y * spacing + room.doorPosition.y}
-                                                    height={room.doorRotation === 'ver' ? spacing * room.doorSize : spacing}
-                                                    width={room.doorRotation === 'hor' ? spacing * room.doorSize : spacing}
-                                                    strokeWidth={1}
-                                                    stroke={'black'}
-                                                    dash={[1, 1]}
-                                                />
-                                            );
-                                        })}
+                                        {showMap && mapSelected && (
+                                            <Transformer
+                                                ref={transformerRef}
+                                                boundBoxFunc={(oldBox, newBox) => {
+                                                    // limit resize
+                                                    if (newBox.width < 5 || newBox.height < 5) {
+                                                        return oldBox;
+                                                    }
+                                                    return newBox;
+                                                }}
+                                                onTransformEnd={({ target }) => {
+                                                    setMapScale({ x: target.attrs.scaleX, y: target.attrs.scaleY });
+                                                    setMapRotation(target.attrs.rotation);
+                                                }}
+                                            />
+                                        )}
+                                        {showMap && (
+                                            <Group
+                                                onClick={() => {
+                                                    if (mapSelected || selectedTool !== Tool.Position) return;
+                                                    setMapSelected(true);
+                                                }}
+                                                rotation={selectedTool === Tool.Position ? mapRotation : 0}
+                                                scaleX={selectedTool === Tool.Position ? mapScale.x : 1}
+                                                scaleY={selectedTool === Tool.Position ? mapScale.y : 1}
+                                                x={mapPosition.x}
+                                                y={mapPosition.y}
+                                                ref={roomGroupRef}
+                                                draggable={selectedTool === Tool.Position}
+                                                onDragEnd={({ target: { attrs } }) => {
+                                                    if (selectedTool !== Tool.Position) return;
+                                                    setMapPosition({ x: attrs.x, y: attrs.y });
+                                                }}
+                                            >
+                                                {appInfo.map.rooms.map((room, index) => {
+                                                    return (
+                                                        <Room
+                                                            key={room.name}
+                                                            index={index}
+                                                            name={room.name}
+                                                            x={room.x}
+                                                            y={room.y}
+                                                            width={room.width}
+                                                            height={room.height}
+                                                            doorPosition={room.doorPosition}
+                                                        />
+                                                    );
+                                                })}
+                                                {appInfo.map.rooms.flatMap(room => {
+                                                    if (
+                                                        !room.doorPosition ||
+                                                        !room.doorRotation ||
+                                                        !room.doorSize ||
+                                                        (appInfo.selectedSubTool === SubTool.AddDoor && appInfo.selectedRoomName === room.name)
+                                                    )
+                                                        return null;
+                                                    return (
+                                                        <Rect
+                                                            key={`DOOR-${room.name}`}
+                                                            fill={'white'}
+                                                            x={room.x * spacing + room.doorPosition.x}
+                                                            y={room.y * spacing + room.doorPosition.y}
+                                                            height={room.doorRotation === 'ver' ? spacing * room.doorSize : spacing}
+                                                            width={room.doorRotation === 'hor' ? spacing * room.doorSize : spacing}
+                                                            strokeWidth={1}
+                                                            stroke={'black'}
+                                                            dash={[1, 1]}
+                                                        />
+                                                    );
+                                                })}
+                                            </Group>
+                                        )}
                                         <Line
                                             points={selectionRegionPoints || [0, 0]}
                                             opacity={selectedTool === Tool.Add ? 1 : 0.3}

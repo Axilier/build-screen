@@ -1,26 +1,21 @@
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import BuildScreen from 'build-screen';
-import { ReactElement, useState } from 'react';
-import { RoomType } from '../../src/Types';
-import { Button, Menu } from 'core';
+import { useState } from 'react';
+import { Map } from '../../src/Types';
 
-const Component = () => {
-    const [map, setMap] = useState<Array<RoomType>>([]);
+export const Component = () => {
+    const [map, setMap] = useState<Map>({
+        rooms: [],
+        position: { lat: 1, lng: 1 },
+        scalePointPosition: { lat: 1, lng: 1 },
+        rotation: 0,
+        scale: { x: 1, y: 1 },
+    });
     const [menu, setMenu] = useState(false);
     return (
         <>
-            <Button onClick={() => setMenu(true)}>open me</Button>
-            <Menu open={menu}>
-                <Button onClick={() => setMenu(false)}>close me</Button>
-            </Menu>
-            <BuildScreen
-                map={map}
-                fileSaved={true}
-                fileSaving={true}
-                onMapChange={setMap}
-                saveRequested={() => console.log('saveRequest')}
-            />
+            <BuildScreen map={map} fileSaved={true} fileSaving={true} onMapChange={setMap} saveRequested={() => console.log('saveRequest')} />
         </>
     );
 };

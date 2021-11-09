@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { Cursor, CursorFill, House } from 'react-bootstrap-icons';
+import { Cursor, CursorFill, House, PinMap } from 'react-bootstrap-icons';
 import { Layout } from 'core';
 import styles from './css/BuildScreen.module.css';
 import './css/globals.css';
 import TileLogo from './assets/TileLogo';
 import BuildStage from './components/BuildStage/BuildStage';
-import { Item, RoomType, SubTool, Tool } from './Types';
+import { Item, RoomType, SubTool, Tool, Map } from './Types';
 import { AppInfoContext } from './Context';
 import ContextMenu from './components/ContextMenu/ContextMenu';
 import PropertiesSidebar from './components/PropertiesSidebar';
@@ -15,11 +15,11 @@ import TitleBarTile from './components/TitleBar/TitleBarTile';
 import useEventListener from './components/useEventListener';
 
 interface Props {
-    map: Array<RoomType>;
+    map: Map;
     fileSaved: boolean;
     fileSaving: boolean;
-    onMapChange: (map: Array<RoomType>) => void;
-    saveRequested?: (map: Array<RoomType>) => void;
+    onMapChange: (map: Map) => void;
+    saveRequested?: (map: Map) => void;
 }
 
 const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map }: Props): JSX.Element => {
@@ -28,7 +28,8 @@ const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map }:
     const [cursor, setCursor] = useState<string>('default');
     const [contextMenuStatus, setContextMenuStatus] = useState<Item | 'closed'>('closed');
     const [selectedShapeName, setSelectedShapeName] = useState<string | null>(null);
-    const [roomList, setRoomList] = useState<Array<RoomType>>(map);
+    const [stateMap, setMap] = useState<Map>(map);
+    const [mapInfo, setMapInfo] = useState({});
 
     const [propertiesWindowStatus, setPropertiesWindowStatus] = useState(false);
 
@@ -41,20 +42,22 @@ const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map }:
         document.addEventListener('keydown', keydown);
         return () => document.removeEventListener('keydown', keydown);
     });
-    useEffect(() => onMapChange(roomList), [onMapChange, roomList]);
+    useEffect(() => onMapChange(stateMap), [onMapChange, stateMap]);
 
     useEventListener('keydown', e => {
         if (e.key !== 's' || !e.ctrlKey || !saveRequested) return;
         e.preventDefault();
-        saveRequested(roomList);
+        saveRequested(stateMap);
     });
 
     return (
         <AppInfoContext.Provider
             value={{
                 spacing: 10,
-                roomList,
-                setRoomList,
+                mapInfo,
+                setMapInfo,
+                map: stateMap,
+                setMap,
                 selectedTool,
                 cursor,
                 setCursor,
@@ -81,7 +84,7 @@ const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map }:
                                     name={'Save'}
                                     shortcut={'Ctrl+S'}
                                     onClick={() => {
-                                        if (saveRequested) saveRequested(roomList);
+                                        if (saveRequested) saveRequested(stateMap);
                                     }}
                                 />
                             </TitleBarTile>
@@ -135,6 +138,21 @@ const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map }:
                             }}
                         >
                             <House color={selectedTool === Tool.Add ? '#3761FF' : '#303c42'} className={styles.sidebarIcon} height={22} width={22} />
+                        </div>
+                        <div
+                            role={'tab'}
+                            className={styles.sideToolbarIconContainer}
+                            onClick={() => {
+                                setSelectedTool(selectedTool === Tool.Position ? Tool.null : Tool.Position);
+                                setCursor('grab');
+                            }}
+                        >
+                            <PinMap
+                                color={selectedTool === Tool.Position ? '#3761FF' : '#303c42'}
+                                className={styles.sidebarIcon}
+                                height={22}
+                                width={22}
+                            />
                         </div>
                     </div>
                     <BuildStage propertiesWindow={propertiesWindowStatus} />

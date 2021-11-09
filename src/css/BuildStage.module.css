@@ -1,7 +1,14 @@
 .buildStage {
+    position: relative;
     display: flex;
     flex-direction: column;
     flex: 1 auto;
+    overflow: hidden;
+}
+.placeMapButton {
+    position: absolute;
+    top: 50px;
+    left: 50px;
 }
 .konvaCanvas {
     flex: 1 0 auto;
