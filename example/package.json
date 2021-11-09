@@ -13,6 +13,7 @@
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
     "build-screen": "link:../dist",
+    "dotenv": "^10.0.0",
     "konva": "^7.1.4",
     "react": "link:../node_modules/react",
     "react-dom": "link:../node_modules/react-dom",

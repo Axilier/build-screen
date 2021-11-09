@@ -11,7 +11,7 @@ import { FixedMouseEvent, SubTool, Tool, Vector2 } from '../../Types';
 import { AppInfoContext, BuildStageContext } from '../../Context';
 import KonvaEventObject = Konva.KonvaEventObject;
 
-export const BuildStage = ({ propertiesWindow }: { propertiesWindow: boolean }): JSX.Element => {
+export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindow: boolean; googleApiKey: string }): JSX.Element => {
     const backgroundSize = { height: 600, width: 950 };
 
     const { selectedTool, cursor, spacing, map, setMap, selectedSubTool, selectedRoomName } = useContext(AppInfoContext);
@@ -114,7 +114,7 @@ export const BuildStage = ({ propertiesWindow }: { propertiesWindow: boolean }):
         [stageInfo.stageX, stageInfo.stageY],
     );
     useEffect(() => {
-        if (selectedTool !== Tool.Position || !stage.current) return;
+        if (selectedTool !== Tool.Position || !stage.current || map.rooms.length === 0) return;
         const room = stage.current.find(`.${map.rooms[0].name}-Fill`);
         if (!room || room.length === 0) return;
         const mapPos = room[0].absolutePosition();
@@ -292,7 +292,7 @@ export const BuildStage = ({ propertiesWindow }: { propertiesWindow: boolean }):
                                 onDragEnd={e => setGoogleInfo({ lat: e.center.lat(), lng: e.center.lng(), zoom: e.zoom })}
                                 onZoomAnimationEnd={e => setGoogleInfo({ ...googleInfo, zoom: e })}
                                 defaultZoom={googleInfo.zoom}
-                                bootstrapURLKeys={{ key: 'AIzaSyBiAeUMqAzN5h4Z6DCkuVHsl8oe4GY4ukU' }}
+                                bootstrapURLKeys={{ key: googleApiKey }}
                             />
                         </div>
                     )}
