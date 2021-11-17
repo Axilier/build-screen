@@ -31,7 +31,7 @@ export const AppInfoContext = createContext<AppInfo>({
     setMapInfo: () => null,
     map: {
         position: { lat: 1, lng: 1 },
-        scalePointPosition: { lat: 1, lng: 1 },
+        ratios: { lat: 1, lng: 1 },
         rooms: [],
         scale: { x: 1, y: 1 },
         rotation: 0,

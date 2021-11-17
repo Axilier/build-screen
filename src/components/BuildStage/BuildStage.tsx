@@ -42,6 +42,8 @@ export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindo
     const [selectionRegionPoints, setSelectionRegionPoints] = useState<Array<number>>();
     const [selectionRegionStatus, setSelectionRegionStatus] = useState(false); // true -- shown, false -- hidden
 
+    const [test, setTest] = useState({ lat: 1, lng: 1 });
+
     const newDimensions = useCallback(() => setDimensions([window.innerWidth - (propertiesWindow ? 580 : 80), window.innerHeight - 100]), [
         propertiesWindow,
     ]);
@@ -119,21 +121,39 @@ export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindo
         if (!room || room.length === 0) return;
         const mapPos = room[0].absolutePosition();
         const projection = getWorldPosition({ x: mapPos.x, y: mapPos.y });
-        const fixedRotation = mapRotation < 0 ? mapRotation + 360 : mapRotation;
-        const secondProjection = getWorldPosition({
-            x: room[0].width() * mapScale.x * Math.cos(fixedRotation * (Math.PI / 180)) + mapPos.x,
-            y: room[0].width() * mapScale.x * Math.sin(fixedRotation * (Math.PI / 180)) + mapPos.y,
+        const widthRationProjection = getWorldPosition({
+            x: room[0].width() + mapPos.x,
+            y: mapPos.y,
+        });
+        const heightRationProjection = getWorldPosition({
+            x: mapPos.x,
+            y: room[0].height() + mapPos.y,
         });
         // TODO get another corner for the room , I think its deffo needed for scaling
-        if (!projection || !secondProjection) return;
+        if (!projection || !widthRationProjection || !heightRationProjection) return;
+        console.log(
+            JSON.stringify({
+                position: {
+                    lat: projection.lat,
+                    lng: projection.lng,
+                },
+                ratios: {
+                    lat: (projection.lat - heightRationProjection.lat) / map.rooms[0].height,
+                    lng: (widthRationProjection.lng - projection.lng) / map.rooms[0].width,
+                },
+                rotation: mapRotation,
+                scale: mapScale,
+                rooms: map.rooms,
+            }),
+        );
         setMap({
             position: {
                 lat: projection.lat,
                 lng: projection.lng,
             },
-            scalePointPosition: {
-                lat: secondProjection.lat,
-                lng: secondProjection.lng,
+            ratios: {
+                lat: (projection.lat - heightRationProjection.lat) / map.rooms[0].height,
+                lng: (widthRationProjection.lng - projection.lng) / map.rooms[0].width,
             },
             rotation: mapRotation,
             scale: mapScale,
@@ -293,7 +313,12 @@ export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindo
                                 onZoomAnimationEnd={e => setGoogleInfo({ ...googleInfo, zoom: e })}
                                 defaultZoom={googleInfo.zoom}
                                 bootstrapURLKeys={{ key: googleApiKey }}
-                            />
+                            >
+                                {/* @ts-ignore */}
+                                <p lat={test.lat} lng={test.lng}>
+                                    test
+                                </p>
+                            </GoogleMapReact>
                         </div>
                     )}
                     <div

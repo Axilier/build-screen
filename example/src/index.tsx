@@ -8,7 +8,7 @@ export const Component = () => {
     const [map, setMap] = useState<Map>({
         rooms: [],
         position: { lat: 1, lng: 1 },
-        scalePointPosition: { lat: 1, lng: 1 },
+        ratios: { lat: 1, lng: 1 },
         rotation: 0,
         scale: { x: 1, y: 1 },
     });

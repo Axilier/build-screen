@@ -73,7 +73,7 @@ export interface ShapeInfo {
 
 export interface Map {
     position: Coords;
-    scalePointPosition: Coords;
+    ratios: Coords;
     rotation: number;
     scale: Vector2;
     rooms: Array<RoomType>;
