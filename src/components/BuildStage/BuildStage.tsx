@@ -14,7 +14,7 @@ import KonvaEventObject = Konva.KonvaEventObject;
 export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindow: boolean; googleApiKey: string }): JSX.Element => {
     const backgroundSize = { height: 600, width: 950 };
 
-    const { selectedTool, cursor, spacing, map, setMap, selectedSubTool, selectedRoomName } = useContext(AppInfoContext);
+    const { selectedTool, cursor, spacing, map, setMap, selectedSubTool, selectedRoomName, setSelectedRoomName } = useContext(AppInfoContext);
     const stage = useRef<Konva.Stage>(null);
     const roomGroupRef = useRef<Konva.Group>(null);
     const ref = useRef<GoogleMapReact>(null);
@@ -41,8 +41,6 @@ export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindo
     const [mousePosition, setMousePosition] = useState<Vector2>({ x: 0, y: 0 }); // DOC the current position of the cursor
     const [selectionRegionPoints, setSelectionRegionPoints] = useState<Array<number>>();
     const [selectionRegionStatus, setSelectionRegionStatus] = useState(false); // true -- shown, false -- hidden
-
-    const [test, setTest] = useState({ lat: 1, lng: 1 });
 
     const newDimensions = useCallback(() => setDimensions([window.innerWidth - (propertiesWindow ? 580 : 80), window.innerHeight - 100]), [
         propertiesWindow,
@@ -129,23 +127,7 @@ export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindo
             x: mapPos.x,
             y: room[0].height() + mapPos.y,
         });
-        // TODO get another corner for the room , I think its deffo needed for scaling
         if (!projection || !widthRationProjection || !heightRationProjection) return;
-        console.log(
-            JSON.stringify({
-                position: {
-                    lat: projection.lat,
-                    lng: projection.lng,
-                },
-                ratios: {
-                    lat: (projection.lat - heightRationProjection.lat) / map.rooms[0].height,
-                    lng: (widthRationProjection.lng - projection.lng) / map.rooms[0].width,
-                },
-                rotation: mapRotation,
-                scale: mapScale,
-                rooms: map.rooms,
-            }),
-        );
         setMap({
             position: {
                 lat: projection.lat,
@@ -160,6 +142,15 @@ export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindo
             rooms: map.rooms,
         });
     }, [getWorldPosition, map.rooms, mapScale, selectedTool, setMap, mapPosition, mapRotation]);
+    useEventListener('keydown', e => {
+        if (e.key === 'Delete') {
+            setMap({
+                ...map,
+                rooms: map.rooms.filter(curMap => curMap.name !== selectedRoomName),
+            });
+            setSelectedRoomName(null);
+        }
+    });
 
     const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
         if (selectedSubTool === SubTool.AddDoor || selectedTool === Tool.Position) return;
@@ -248,12 +239,13 @@ export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindo
                 x: Math.round((topLeftPosition.x - backgroundPosition.x) / spacing) + 1,
                 y: Math.round((topLeftPosition.y - backgroundPosition.y) / spacing) + 1,
             };
+            const roomName = map.rooms.length === 0 ? `Room-0` : `Room-${parseInt(map.rooms[map.rooms.length - 1].name.split('-')[1], 10) + 1}`;
             setMap({
                 ...map,
                 rooms: [
                     ...map.rooms,
                     {
-                        name: `Room-${map.rooms.length + 1}`,
+                        name: roomName,
                         doorPosition: null,
                         ...position,
                         height,
@@ -313,12 +305,7 @@ export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindo
                                 onZoomAnimationEnd={e => setGoogleInfo({ ...googleInfo, zoom: e })}
                                 defaultZoom={googleInfo.zoom}
                                 bootstrapURLKeys={{ key: googleApiKey }}
-                            >
-                                {/* @ts-ignore */}
-                                <p lat={test.lat} lng={test.lng}>
-                                    test
-                                </p>
-                            </GoogleMapReact>
+                            />
                         </div>
                     )}
                     <div
@@ -450,10 +437,10 @@ export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindo
                         </Stage>
                     </div>
                     <div className={styles.bottomInfobar}>
-                        <div>x:{mousePosition?.x || 0}</div>
+                        <div style={{ marginLeft: '20px' }}>x:{mousePosition?.x || 0}</div>
                         <div>y:{mousePosition?.y || 0}</div>
                         <div>Scale:{stageInfo.stageScale}</div>
-                        <div>Selected:{appInfo.selectedRoomName}</div>
+                        <div  style={{ marginRight: '20px' }}>Selected:{appInfo.selectedRoomName === null ? 'No Room Selected' : appInfo.selectedRoomName}</div>
                     </div>
                 </div>
             )}

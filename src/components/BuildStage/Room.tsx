@@ -331,7 +331,7 @@ const Room = ({
                                 width={width + appInfo.spacing * 2}
                                 x={backgroundPosition.x + x - appInfo.spacing}
                                 y={backgroundPosition.y + y - appInfo.spacing}
-                                fill={'black'}
+                                fill={appInfo.selectedRoomName === name ? '#575757' : 'black'}
                             />
                             <Rect
                                 name={`${name}-Fill`}
