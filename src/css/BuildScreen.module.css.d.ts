@@ -1,5 +1,6 @@
 export const buildScreen: string;
 export const toolbar: string;
+export const exit: string;
 export const toolbarLine: string;
 export const logoContainer: string;
 export const filename: string;

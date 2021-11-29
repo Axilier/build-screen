@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { Cursor, CursorFill, House, PinMap } from 'react-bootstrap-icons';
+import { Cursor, CursorFill, House, PinMap, BoxArrowLeft } from 'react-bootstrap-icons';
 import { Layout } from 'core';
 import styles from './css/BuildScreen.module.css';
 import './css/globals.css';
 import TileLogo from './assets/TileLogo';
 import BuildStage from './components/BuildStage/BuildStage';
-import { Item, RoomType, SubTool, Tool, Map } from './Types';
+import { Item, SubTool, Tool, Map } from './Types';
 import { AppInfoContext } from './Context';
 import ContextMenu from './components/ContextMenu/ContextMenu';
 import PropertiesSidebar from './components/PropertiesSidebar';
@@ -15,15 +15,17 @@ import TitleBarTile from './components/TitleBar/TitleBarTile';
 import useEventListener from './components/useEventListener';
 
 interface Props {
+    mapName: string;
     googleApiKey: string;
     map: Map;
     fileSaved: boolean;
     fileSaving: boolean;
     onMapChange: (map: Map) => void;
     saveRequested?: (map: Map) => void;
+    onClose: () => void;
 }
 
-const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map, googleApiKey }: Props): JSX.Element => {
+const BuildScreen = ({ mapName, fileSaved, fileSaving, onMapChange, saveRequested, map, googleApiKey, onClose }: Props): JSX.Element => {
     const [selectedTool, setSelectedTool] = useState<Tool>(Tool.Cursor);
     const [selectedSubTool, setSelectedSubTool] = useState<SubTool>(SubTool.null);
     const [cursor, setCursor] = useState<string>('default');
@@ -34,15 +36,15 @@ const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map, g
 
     const [propertiesWindowStatus, setPropertiesWindowStatus] = useState(false);
 
-    useEffect(() => {
-        const keydown = (event: KeyboardEvent) => {
-            if (event.key === '`') {
-                setPropertiesWindowStatus(!propertiesWindowStatus);
-            }
-        };
-        document.addEventListener('keydown', keydown);
-        return () => document.removeEventListener('keydown', keydown);
-    });
+    // useEffect(() => {
+    //     const keydown = (event: KeyboardEvent) => {
+    //         if (event.key === '`') {
+    //             setPropertiesWindowStatus(!propertiesWindowStatus);
+    //         }
+    //     };
+    //     document.addEventListener('keydown', keydown);
+    //     return () => document.removeEventListener('keydown', keydown);
+    // });
     useEffect(() => onMapChange(stateMap), [onMapChange, stateMap]);
 
     useEventListener('keydown', e => {
@@ -76,7 +78,7 @@ const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map, g
                         <TileLogo />
                     </div>
                     <Layout orientation={'column'}>
-                        <div className={styles.filename}>{'test'}</div>
+                        <div className={styles.filename}>{mapName}</div>
                         <TitleBar backgroundColor={'#FFFFFF'} color={'black'} hoveredColor={'#F3F3F3'} menuTileTextColor={'black'}>
                             <TitleBarTile name={'File'}>
                                 <MenuTile name={'New'} shortcut={'Ctrl+N'} onClick={() => console.log('New')} />
@@ -96,6 +98,7 @@ const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map, g
                             <h5 className={styles.savingAlert}>{fileSaved ? (fileSaving ? 'File Saving...' : 'File Saved.') : 'Unsaved Changes'}</h5>
                         </TitleBar>
                     </Layout>
+                    <BoxArrowLeft onClick={() => onClose()} className={styles.exit} />
                     <div className={styles.toolbarLine} />
                 </div>
                 <Layout orientation={'row'}>
@@ -160,7 +163,7 @@ const BuildScreen = ({ fileSaved, fileSaving, onMapChange, saveRequested, map, g
                     <PropertiesSidebar open={propertiesWindowStatus} />
                 </Layout>
             </Layout>
-            <ContextMenu />
+            {/* <ContextMenu /> */}
         </AppInfoContext.Provider>
     );
 };

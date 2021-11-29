@@ -16,12 +16,14 @@ export const Component = () => {
     return (
         <>
             <BuildScreen
+                mapName={'this a test'}
                 googleApiKey={process.env.REACT_APP_GOOGLE_API_KEY || 't'}
                 map={map}
                 fileSaved={true}
                 fileSaving={true}
                 onMapChange={setMap}
                 saveRequested={() => console.log('saveRequest')}
+                onClose={() => console.log('close')}
             />
         </>
     );

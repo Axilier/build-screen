@@ -13,6 +13,7 @@ body,
 }
 .toolbar {
     position: relative;
+    flex-direction: row;
     display: flex;
     height: 70px;
     width: 100%;
@@ -28,6 +29,14 @@ body,
     width: 100%;
     background-color: #3761ff;
     left: 0;
+}
+.exit {
+    justify-content: flex-end;
+    cursor: pointer;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 .logoContainer {
     width: 81px;
