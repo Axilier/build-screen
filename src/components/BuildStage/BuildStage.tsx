@@ -143,7 +143,7 @@ export const BuildStage = ({ propertiesWindow, googleApiKey }: { propertiesWindo
         });
     }, [getWorldPosition, map.rooms, mapScale, selectedTool, setMap, mapPosition, mapRotation]);
     useEventListener('keydown', e => {
-        if (e.key === 'Delete') {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
             setMap({
                 ...map,
                 rooms: map.rooms.filter(curMap => curMap.name !== selectedRoomName),
