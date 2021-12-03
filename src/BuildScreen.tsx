@@ -81,8 +81,6 @@ const BuildScreen = ({ mapName, fileSaved, fileSaving, onMapChange, saveRequeste
                         <div className={styles.filename}>{mapName}</div>
                         <TitleBar backgroundColor={'#FFFFFF'} color={'black'} hoveredColor={'#F3F3F3'} menuTileTextColor={'black'}>
                             <TitleBarTile name={'File'}>
-                                <MenuTile name={'New'} shortcut={'Ctrl+N'} onClick={() => console.log('New')} />
-                                <MenuTile name={'Open'} shortcut={'Ctrl+O'} onClick={() => console.log('Open')} />
                                 <MenuTile
                                     name={'Save'}
                                     shortcut={'Ctrl+S'}
@@ -90,10 +88,6 @@ const BuildScreen = ({ mapName, fileSaved, fileSaving, onMapChange, saveRequeste
                                         if (saveRequested) saveRequested(stateMap);
                                     }}
                                 />
-                            </TitleBarTile>
-                            <TitleBarTile name={'Edit'}>
-                                <MenuTile name={'Undo'} shortcut={'Ctrl+Z'} onClick={() => console.log('Undo')} />
-                                <MenuTile name={'Redo'} shortcut={'Ctrl+Shift+Z'} onClick={() => console.log('Redo')} />
                             </TitleBarTile>
                             <h5 className={styles.savingAlert}>{fileSaved ? (fileSaving ? 'File Saving...' : 'File Saved.') : 'Unsaved Changes'}</h5>
                         </TitleBar>
